@@ -74,9 +74,19 @@
    "t": "2026-10-31 05:43:55",
    "stage": "models",
    "msg": "M08_lgbm_tw13_slow_F5: CV"
+  },
+  {
+   "t": "2026-10-31 05:44:22",
+   "stage": "models",
+   "msg": "M08_lgbm_tw13_slow_F5: CV 7.565 (0.4 min)"
+  },
+  {
+   "t": "2026-10-31 05:44:22",
+   "stage": "models",
+   "msg": "M09_lgbm_tw13_reg_F5: CV"
   }
  ],
  "stage": "models",
- "message": "M08_lgbm_tw13_slow_F5: CV",
- "updated": "2026-10-31 05:43:55"
+ "message": "M09_lgbm_tw13_reg_F5: CV",
+ "updated": "2026-10-31 05:44:22"
 }
