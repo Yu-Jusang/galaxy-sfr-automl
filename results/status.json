@@ -84,9 +84,139 @@
    "t": "2026-10-31 05:44:22",
    "stage": "models",
    "msg": "M09_lgbm_tw13_reg_F5: CV"
+  },
+  {
+   "t": "2026-10-31 05:44:37",
+   "stage": "models",
+   "msg": "M09_lgbm_tw13_reg_F5: CV 7.532 (0.3 min)"
+  },
+  {
+   "t": "2026-10-31 05:44:37",
+   "stage": "models",
+   "msg": "M10_lgbm_sq_F5: CV"
+  },
+  {
+   "t": "2026-10-31 05:44:43",
+   "stage": "models",
+   "msg": "M10_lgbm_sq_F5: CV 7.651 (0.1 min)"
+  },
+  {
+   "t": "2026-10-31 05:44:43",
+   "stage": "models",
+   "msg": "M11_lgbm_poisson_F5: CV"
+  },
+  {
+   "t": "2026-10-31 05:44:59",
+   "stage": "models",
+   "msg": "M11_lgbm_poisson_F5: CV 8.280 (0.3 min)"
+  },
+  {
+   "t": "2026-10-31 05:44:59",
+   "stage": "models",
+   "msg": "M12_lgbm_logsmear_F5: CV"
+  },
+  {
+   "t": "2026-10-31 05:45:16",
+   "stage": "models",
+   "msg": "M12_lgbm_logsmear_F5: CV 7.831 (0.3 min)"
+  },
+  {
+   "t": "2026-10-31 05:45:16",
+   "stage": "models",
+   "msg": "M13_xgb_tw13_F5: CV"
+  },
+  {
+   "t": "2026-10-31 05:45:40",
+   "stage": "models",
+   "msg": "M13_xgb_tw13_F5: CV 7.623 (0.4 min)"
+  },
+  {
+   "t": "2026-10-31 05:45:40",
+   "stage": "models",
+   "msg": "M14_xgb_tw13_deep_F5: CV"
+  },
+  {
+   "t": "2026-10-31 05:46:07",
+   "stage": "models",
+   "msg": "M14_xgb_tw13_deep_F5: CV 7.733 (0.4 min)"
+  },
+  {
+   "t": "2026-10-31 05:46:07",
+   "stage": "models",
+   "msg": "M15_cat_tw13_F5: CV"
+  },
+  {
+   "t": "2026-10-31 05:47:20",
+   "stage": "models",
+   "msg": "M15_cat_tw13_F5: CV 7.644 (1.2 min)"
+  },
+  {
+   "t": "2026-10-31 05:47:20",
+   "stage": "models",
+   "msg": "M16_cat_tw13_d8_F5: CV"
+  },
+  {
+   "t": "2026-10-31 05:48:43",
+   "stage": "models",
+   "msg": "M16_cat_tw13_d8_F5: CV 7.664 (1.4 min)"
+  },
+  {
+   "t": "2026-10-31 05:48:43",
+   "stage": "models",
+   "msg": "M17_cat_rmse_F5: CV"
+  },
+  {
+   "t": "2026-10-31 05:49:04",
+   "stage": "models",
+   "msg": "M17_cat_rmse_F5: CV 7.830 (0.4 min)"
+  },
+  {
+   "t": "2026-10-31 05:49:04",
+   "stage": "models",
+   "msg": "M18_hgb_poisson_F5: CV"
+  },
+  {
+   "t": "2026-10-31 05:49:20",
+   "stage": "models",
+   "msg": "M18_hgb_poisson_F5: CV 10.658 (0.3 min)"
+  },
+  {
+   "t": "2026-10-31 05:49:20",
+   "stage": "models",
+   "msg": "M19_et_F5: CV"
+  },
+  {
+   "t": "2026-10-31 05:51:41",
+   "stage": "models",
+   "msg": "M19_et_F5: CV 7.815 (2.3 min)"
+  },
+  {
+   "t": "2026-10-31 05:51:41",
+   "stage": "models",
+   "msg": "M20_rf_F5: CV"
+  },
+  {
+   "t": "2026-10-31 06:06:27",
+   "stage": "models",
+   "msg": "M20_rf_F5: CV 7.854 (14.8 min)"
+  },
+  {
+   "t": "2026-10-31 06:06:27",
+   "stage": "models",
+   "msg": "M21_mlp_F5: CV"
+  },
+  {
+   "t": "2026-10-31 06:12:53",
+   "stage": "models",
+   "msg": "M21_mlp_F5: CV 8.595 (6.4 min)"
+  },
+  {
+   "t": "2026-10-31 06:12:53",
+   "stage": "models",
+   "msg": "M22_cat_tw13_F5A: CV"
   }
  ],
  "stage": "models",
- "message": "M09_lgbm_tw13_reg_F5: CV",
- "updated": "2026-10-31 05:44:22"
+ "message": "M22_cat_tw13_F5A: CV",
+ "updated": "2026-10-31 06:12:53"
 }
