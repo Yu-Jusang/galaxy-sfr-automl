@@ -214,9 +214,29 @@
    "t": "2026-10-31 06:12:53",
    "stage": "models",
    "msg": "M22_cat_tw13_F5A: CV"
+  },
+  {
+   "t": "2026-10-31 06:15:35",
+   "stage": "models",
+   "msg": "M22_cat_tw13_F5A: CV 7.859 (2.7 min)"
+  },
+  {
+   "t": "2026-10-31 06:15:35",
+   "stage": "models",
+   "msg": "M23_xgb_tw13_F5A: CV"
+  },
+  {
+   "t": "2026-10-31 06:16:20",
+   "stage": "models",
+   "msg": "M23_xgb_tw13_F5A: CV 7.682 (0.7 min)"
+  },
+  {
+   "t": "2026-10-31 06:16:25",
+   "stage": "autogluon",
+   "msg": "AG3_F5: fitting (limit 1.5 h)"
   }
  ],
- "stage": "models",
- "message": "M22_cat_tw13_F5A: CV",
- "updated": "2026-10-31 06:12:53"
+ "stage": "autogluon",
+ "message": "AG3_F5: fitting (limit 1.5 h)",
+ "updated": "2026-10-31 06:16:25"
 }
