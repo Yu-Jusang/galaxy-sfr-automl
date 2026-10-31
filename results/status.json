@@ -469,9 +469,159 @@
    "t": "2026-10-31 11:06:36",
    "stage": "models",
    "msg": "M70_lgbm_tw13_F5LS: CV 7.839 (0.8 min)"
+  },
+  {
+   "t": "2026-10-31 11:20:29",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 1/5"
+  },
+  {
+   "t": "2026-10-31 11:20:40",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 2/5"
+  },
+  {
+   "t": "2026-10-31 11:20:51",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 3/5"
+  },
+  {
+   "t": "2026-10-31 11:21:02",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 4/5"
+  },
+  {
+   "t": "2026-10-31 11:21:13",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 5/5"
+  },
+  {
+   "t": "2026-10-31 11:21:39",
+   "stage": "models",
+   "msg": "LK_ridge_F5: CV 34724785943.542 (1 min)"
+  },
+  {
+   "t": "2026-10-31 11:21:39",
+   "stage": "models",
+   "msg": "LK_tweedie_glm_F5: fold 1/5"
+  },
+  {
+   "t": "2026-10-31 11:22:11",
+   "stage": "models",
+   "msg": "LK_tweedie_glm_F5: fold 2/5"
+  },
+  {
+   "t": "2026-10-31 11:22:39",
+   "stage": "models",
+   "msg": "LK_tweedie_glm_F5: fold 3/5"
+  },
+  {
+   "t": "2026-10-31 11:23:05",
+   "stage": "models",
+   "msg": "LK_tweedie_glm_F5: fold 4/5"
+  },
+  {
+   "t": "2026-10-31 11:23:31",
+   "stage": "models",
+   "msg": "LK_tweedie_glm_F5: fold 5/5"
+  },
+  {
+   "t": "2026-10-31 11:24:32",
+   "stage": "models",
+   "msg": "LK_tweedie_glm_F5: CV 8.746 (3 min)"
+  },
+  {
+   "t": "2026-10-31 11:25:02",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 1/5"
+  },
+  {
+   "t": "2026-10-31 11:25:09",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 2/5"
+  },
+  {
+   "t": "2026-10-31 11:25:13",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 3/5"
+  },
+  {
+   "t": "2026-10-31 11:25:17",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 4/5"
+  },
+  {
+   "t": "2026-10-31 11:25:22",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 5/5"
+  },
+  {
+   "t": "2026-10-31 11:25:31",
+   "stage": "models",
+   "msg": "LK_ridge_F5: CV 18.744 (0 min)"
+  },
+  {
+   "t": "2026-10-31 11:26:43",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 1/5"
+  },
+  {
+   "t": "2026-10-31 11:26:49",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 2/5"
+  },
+  {
+   "t": "2026-10-31 11:26:56",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 3/5"
+  },
+  {
+   "t": "2026-10-31 11:27:03",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 4/5"
+  },
+  {
+   "t": "2026-10-31 11:27:09",
+   "stage": "models",
+   "msg": "LK_ridge_F5: fold 5/5"
+  },
+  {
+   "t": "2026-10-31 11:27:23",
+   "stage": "models",
+   "msg": "LK_ridge_F5: CV 9.183 (1 min)"
+  },
+  {
+   "t": "2026-10-31 11:43:12",
+   "stage": "selection",
+   "msg": "SEL_F5X: outer fold 1/5 selecting from 153"
+  },
+  {
+   "t": "2026-10-31 11:44:17",
+   "stage": "selection",
+   "msg": "SEL_F5X: outer fold 2/5 selecting from 153"
+  },
+  {
+   "t": "2026-10-31 11:45:19",
+   "stage": "selection",
+   "msg": "SEL_F5X: outer fold 3/5 selecting from 153"
+  },
+  {
+   "t": "2026-10-31 11:46:30",
+   "stage": "selection",
+   "msg": "SEL_F5X: outer fold 4/5 selecting from 153"
+  },
+  {
+   "t": "2026-10-31 11:53:58",
+   "stage": "selection",
+   "msg": "SEL_F5X: outer fold 5/5 selecting from 153"
+  },
+  {
+   "t": "2026-10-31 11:57:46",
+   "stage": "selection",
+   "msg": "SEL_F5X: done, 53 columns on the full split"
   }
  ],
- "stage": "models",
- "message": "M70_lgbm_tw13_F5LS: CV 7.839 (0.8 min)",
- "updated": "2026-10-31 11:06:36"
+ "stage": "selection",
+ "message": "SEL_F5X: done, 53 columns on the full split",
+ "updated": "2026-10-31 11:57:46"
 }

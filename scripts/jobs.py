@@ -7,10 +7,12 @@ usage:
   python scripts/jobs.py unpack <zip> ...     # merge result zips from other machines (on machine A)
 
 Machine roles (see report/distribution_plan.pdf):
-  A  coordinator laptop (Windows, 16 threads, 16 GB, no GPU)      cheap single models + feature-axis AutoGluon + final ensemble
+  A  coordinator laptop (Windows, 16 threads, 16 GB, no GPU)      single models, linear/kernel/KNN, nested feature
+                                                                  selection, 2 AutoGluon runs, final ensemble
   B  Apple-silicon Mac (MPS)                                      neural / kernel / foundation models + NN tuning
-  C  any CPU machine with >= 16 GB RAM                            nested Optuna tuning (trees) + two AutoGluon runs
-  D  machine with a CUDA GPU if available (Colab, lab server)     AutoGluon preprocessing axis + extreme_quality
+  C  any CPU machine with >= 16 GB RAM                            nested Optuna tuning (trees) + 1 AutoGluon run
+  D  machine with a CUDA GPU if available (Colab, lab server)     AutoGluon feature axis + preprocessing + extreme
+  X  optional jobs for whichever machine finishes first
 """
 import json
 import os
@@ -27,30 +29,41 @@ AG = "scripts/a03_autogluon.py"; TU = "scripts/a07_tune.py"
 LT = "scripts/a08_tune_linear.py"; NT = "scripts/a09_tune_nn.py"
 
 # (job id, machine, script, args, result names, estimated hours on that machine)
+# Feature sets (fixed before the runs): F5 original 25 | F5C curated literature 47 | F5LS + teammate-1 89 |
+# F5X all of ours 153 | FULL ours + teammate-2 module | T2CORE teammate-2 core | SEL(.) chosen inside each fold
+SEL = "scripts/a10_select.py"
+LK_SETS = ("F5", "F5C", "F5LS")
 JOBS = [
+    # ---------------- A: coordinator laptop (CPU)
     ("J01", "A", M, ["M71_lgbm_tw13_reg_F5LS", "M72_xgb_tw13_F5LS", "M73_cat_tw13_d8_F5LS", "M74_et_F5LS",
-                     "M75_rf_F5LS", "M76_mlp_F5LS", "M77_lgbm_logsmear_F5LS"], None, 1.0),
-    ("J02", "A", LT, [f"LK_{f}_{fs}{t}" for fs in ("F5", "F5LS") for f in
-                      ("ridge", "lasso", "tweedie_glm", "kernel_ridge", "knn") for t in ("", "_tuned")], None, 3.5),
-    ("J03", "A", AG, ["AG8_F5L"], None, 1.5),
-    ("J04", "A", AG, ["AG9_F5S"], None, 1.5),
-    ("J05", "A", AG, ["AG2_F3"], None, 1.5),
-    ("J06", "A", AG, ["AG1_F0"], None, 1.5),
-    ("J07", "B", DP, [f"{k}_{fs}" for fs in ("F5", "F5LS") for k in
+                     "M75_rf_F5LS", "M76_mlp_F5LS", "M77_lgbm_logsmear_F5LS",
+                     "M80_lgbm_tw13_F5C", "M81_lgbm_tw13_reg_F5C", "M82_xgb_tw13_F5C", "M83_cat_tw13_d8_F5C",
+                     "M84_et_F5C", "M85_rf_F5C", "M86_mlp_F5C", "M87_lgbm_logsmear_F5C"], None, 2.0),
+    ("J02", "A", LT, [f"LK_{f}_{fs}{t}" for fs in LK_SETS for f in
+                      ("ridge", "lasso", "tweedie_glm", "kernel_ridge", "knn") for t in ("", "_tuned")], None, 4.5),
+    ("J20", "A", SEL, ["F5X", "FULL"], ["SEL_F5X_lgbm", "SEL_F5X_lgbm_reg", "SEL_F5X_xgb", "SEL_F5X_cat"], 1.0),
+    ("J21", "A", AG, ["AG24_F5C_log"], None, 1.5),
+    ("J22", "A", AG, ["AG25_F5C_sqrt"], None, 1.5),
+    # ---------------- B: Apple-silicon Mac (MPS)
+    ("J07", "B", DP, [f"{k}_{fs}" for fs in ("F5", "F5C", "F5LS") for k in
                       ("M40_mlp_tweedie", "M41_tabm", "M42_realmlp", "M43_realmlp_log", "M44_xrfm_log", "M45_tabpfn")],
-     None, 4.0),
-    ("J19", "B", NT, ["NN_tabm_F5LS_tuned", "NN_realmlp_F5LS_tuned"], None, 7.0),
+     None, 6.0),
+    ("J19", "B", NT, ["NN_tabm_F5C_tuned", "NN_realmlp_F5C_tuned"], None, 5.0),
+    # ---------------- C: CPU machine
     ("J09", "C", TU, ["lgbm", "50"], ["T01_lgbm_tuned"], 2.5),
     ("J10", "C", TU, ["xgb", "40"], ["T02_xgb_tuned"], 3.0),
     ("J11", "C", TU, ["cat", "25"], ["T03_cat_tuned"], 3.5),
-    ("J12", "D", AG, ["AG10_F5LS"], None, 1.5),
-    ("J13", "D", AG, ["AG11_F5X"], None, 1.5),
-    ("J14", "D", AG, ["AG12_F5LS_tweedie"], None, 1.5),
-    ("J15", "D", AG, ["AG13_F5LS_log"], None, 1.5),
-    ("J16", "D", AG, ["AG15_F5LS_wmassive"], None, 1.5),
-    ("J17", "D", AG, ["AG18_F5LS_extreme"], None, 2.0),
-    ("J18", "C", AG, ["AG14_F5LS_sqrt", "AG16_F5LS_stack2"], None, 3.0),
-    ("J08", "D", AG, ["AG17_F5LS_long"], None, 4.0),   # optional: run last, if time allows
+    ("J23", "C", AG, ["AG26_F5C_wmassive"], None, 1.5),
+    # ---------------- D: CUDA GPU machine
+    ("J12", "D", AG, ["AG20_F5C"], None, 1.5),
+    ("J13", "D", AG, ["AG10_F5LS"], None, 1.5),
+    ("J14", "D", AG, ["AG11_F5X"], None, 1.5),
+    ("J15", "D", AG, ["AG21_FULL", "AG22_T2CORE"], None, 3.0),
+    ("J16", "D", AG, ["AG23_F5C_tweedie"], None, 1.5),
+    ("J17", "D", AG, ["AG27_F5C_extreme"], None, 2.0),
+    # ---------------- optional, whichever machine finishes first (run with: python scripts/jobs.py run X)
+    ("J30", "X", AG, ["AG1_F0", "AG2_F3"], None, 3.0),
+    ("J31", "X", AG, ["AG17_F5LS_long"], None, 4.0),
 ]
 
 

@@ -137,8 +137,8 @@ _BASE = {
     "M44_xrfm_log": (smear_log(xrfm_log), "xRFM (tree-partitioned Recursive Feature Machine), log1p target + smearing"),
     "M45_tabpfn": (tabpfn, "TabPFN v2, 4 estimators, context = 10,000 stratified training galaxies"),
 }
-# every model on the original feature set F5 and on F5LS (F5 + literature + teammate features)
-CONFIGS = {f"{k}_{fs}": (fn, d, fs) for fs in ("F5", "F5LS") for k, (fn, d) in _BASE.items()}
+# every model on F5 (original), F5C (curated literature) and F5LS (F5 + literature + teammate 1)
+CONFIGS = {f"{k}_{fs}": (fn, d, fs) for fs in ("F5", "F5C", "F5LS") for k, (fn, d) in _BASE.items()}
 
 
 def run(name):

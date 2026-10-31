@@ -12,6 +12,7 @@
 \definecolor{acc}{HTML}{1F5FA8}
 \definecolor{boxbg}{HTML}{EEF3FA}
 \titleformat{\section}{\sffamily\large\bfseries\color{acc}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\sffamily\normalsize\bfseries}{\thesubsection}{0.5em}{}
 \titlespacing*{\section}{0pt}{1.2em}{0.5em}
 \linespread{1.2}
 \setlength{\parindent}{0pt}
@@ -23,149 +24,110 @@
 \newcommand{\keybox}[1]{\par\smallskip\noindent\colorbox{boxbg}{\parbox{\dimexpr\linewidth-2\fboxsep}{\small #1}}\par\smallskip}
 
 \pagestyle{fancy}\fancyhf{}
-\fancyhead[L]{\small\sffamily 은하 SFR 예측 · 기기 분담 계획}
+\fancyhead[L]{\small\sffamily 은하 SFR 예측 · 팀 실험 계획 (개정)}
 \fancyhead[R]{\small\sffamily 2026-10-31}
 \fancyfoot[C]{\small\thepage}
 
 \begin{document}
 
-{\sffamily\LARGE\bfseries\color{acc} 기기 4대 분담 실행 계획}\par
+{\sffamily\LARGE\bfseries\color{acc} 팀 실험 계획: 조원 자료 통합과 과적합 대책}\par
 \vspace{0.3em}
-{\sffamily\small AutoGluon 변형, 단일 모델, 튜닝, 딥러닝, 앙상블을 기기 4대에 나눠 약 10시간에 끝내는 계획}
+{\sffamily\small 단일 모델 $\to$ 튜닝 $\to$ AutoGluon $\to$ 앙상블을 기기 4대에서 같은 기준으로 돌리는 계획}
 
-\keybox{\textbf{핵심.} 모든 기기가 같은 저장소 코드(\col{Yu-Jusang/galaxy-sfr-automl})로 같은 분할·같은 5-fold·같은 변수를 계산한다. 각 기기는 명령 한 줄(\col{python scripts/jobs.py run <기기>})로 맡은 작업을 돌리고, 결과 zip을 A에 보낸다. A가 합쳐서 앙상블과 최종 선택을 한다.}
+\keybox{\textbf{요약.} (1) 모든 기기가 대회 양식의 고정 분할과 같은 5-fold, 같은 변수 코드를 쓴다. (2) 변수는 미리 정한 세트(F5, F5C, F5LS, F5X, FULL)와 fold 안에서 고른 세트(SEL)로 비교한다. (3) 변수를 늘리면 지금까지 \textbf{매번 CV가 나빠졌으므로}, 최종 선택은 ``CV 최저 모델과 1 SE 안이면 변수가 적은 모델''로 한다. (4) 검증셋은 마지막에 한 번만 본다.}
 
-\section{왜 이렇게 나누나}
+%=============================================================
+\section{조원 자료를 확인한 결과}
+
+\begin{tabularx}{\linewidth}{@{}l Y Y@{}}
+\toprule
+자료 & 확인한 것 & 이번 계획에서의 처리\\
+\midrule
+조원 1 (압축 파일) & AutoGluon 확장(14개 변수) 테스트 RMSE 8.72, 주변 은하 변수 27개, 4성분 분해·SVM 탐색. \textbf{분할이 대회 양식과 다르다}: 그 테스트 20\% 중 공식 검증셋과 겹치는 행은 20\%(8,353개)뿐 & 점수·예측값은 공식 비교와 앙상블에 쓰지 않는다. 주변 은하 27개 변수는 이미 저장소에 있다(S 묶음, 주기 경계·전체 카탈로그로 통일). 분해(hurdle) 아이디어는 AutoGluon·스태킹으로 대체\\
+조원 2 (인계 문서·피처사전) & 변수 424개(25개 묶음), train 5-fold 검증에서 core(43개)가 RMSE 8.08로 가장 좋고 전부(234–328개)는 8.14–8.16으로 나빠짐 & \textbf{실제 코드 \col{sfr\_features.py}가 받은 파일에 없다}. 받으면 \col{src/}에 넣어 FULL(우리 + 조원 2)·T2CORE 세트로 자동 연결. 없으면 해당 작업만 건너뜀\\
+\bottomrule
+\end{tabularx}
+
+두 조원 모두 변수를 늘리면 나빠지는 결과를 얻었고, 우리 실험도 같다(4절). 과적합 우려는 실제로 확인된 문제다.
+
+%=============================================================
+\section{과적합 대책}
 \begin{enumerate}
-\item \textbf{변수 효과는 튜닝 없는 모델로 판정할 수 없다.} 원래 최종 모델 설정(튜닝 없는 LightGBM)에 문헌 묶음이나 친구 변수를 하나씩 넣으면 모두 CV가 0.1–0.2 나빠졌다(묶인 동반 은하 L7만 거의 같음). 하이퍼파라미터가 25개 변수에 맞춰져 있어서다. 그래서 새 변수는 \textbf{튜닝}(변수 묶음 포함 여부도 Optuna가 고름)과 \textbf{AutoGluon}(설정이 변수에 맞춰 바뀜)으로 판정한다.
-\item \textbf{AutoGluon은 두 축으로 돌린다.} 변수 축(어떤 변수를 넣나)과 전처리 축(목표 변환, 손실, 가중치, 프리셋)이다. 축마다 한 가지씩만 바꿔야 효과를 따로 읽을 수 있다.
-\item \textbf{기기 성격에 맞춘다.} 딥러닝·사전학습은 GPU(Mac MPS 또는 CUDA), 튜닝은 CPU 코어 수, AutoGluon은 RAM과 코어 수가 중요하다.
+\item \textbf{세트를 미리 정한다.} 결과를 보기 전에 정한 세트만 비교한다: F5(25, 원래 최종), F5C(47, 문헌 근거가 가장 강한 L1·L3·L4·L7), F5LS(89, 문헌 + 조원 1), F5X(153, 우리 변수 전부), FULL(우리 + 조원 2), T2CORE(조원 2 core).
+\item \textbf{데이터로 고를 때는 fold 안에서만.} SEL 세트는 바깥 fold마다 학습부 안에서 Boruta 방식(각 변수를 뒤섞은 가짜 사본보다 SHAP 중요도가 커야 남김, 안쪽 3-fold 모두에서)과 중복 제거(순위 상관 0.98 초과)로 고른다. 평가 fold는 변수 선택에 관여하지 않는다.
+\item \textbf{튜닝도 묶음 단위로.} 트리 튜닝에서 문헌 L1–L7과 조원 1 변수 S를 묶음별로 켜고 끄는 것을 Optuna가 nested로 고른다.
+\item \textbf{규제.} 큰 세트에는 규제 LightGBM(잎 15, 최소 표본 100, 열 샘플링 0.5, L2 5)을 함께 돌린다.
+\item \textbf{최종 선택 규칙(1-SE).} CV 최저 모델과 짝지은 차이가 1 SE 안인 모델 중 \textbf{입력 변수가 가장 적은} 것을 고른다. 앙상블은 가장 복잡한 것으로 친다.
+\item \textbf{검증셋 1회.} 공식 검증셋은 A가 최종 선택 뒤에 한 번만 평가한다.
 \end{enumerate}
 
-\section{변수 세트}
-\begin{tabularx}{\linewidth}{@{}l r Y@{}}
-\toprule
-세트 & 개수 & 구성\\
-\midrule
-F0 & 13 & CSV 원래 입력 열\\
-F3 & 22 & F0 + 물리 파생 9\\
-F5 & 25 & 원래 최종 모델 변수\\
-F5L & 62 & F5 + 문헌 묶음 L1–L7\\
-F5S & 52 & F5 + 친구 변수 27\\
-F5LS & 89 & F5 + 문헌 + 친구\\
-F5X & 153 & 만든 변수 전부(F5 + L + S + A1 + A2 + G + N + MSSM)\\
-\bottomrule
-\end{tabularx}
-정확한 수식은 \col{report/feature\_definitions.pdf}.
-
-\section{기기별 작업}
-
-\subsection*{A — 조정용 노트북 (Windows, 16스레드, RAM 16 GB, GPU 없음) · 약 10.5시간}
-
-\begin{tabularx}{\linewidth}{@{}l Y r@{}}
-\toprule
-작업 & 내용 & 시간\\
-\midrule
-J01 & F5LS 단일 모델 7개: 규제 LightGBM, XGBoost, CatBoost, ExtraTrees, RF, MLP, 로그 목표 LightGBM & 1.0 h\\
-J02 & 선형·커널·KNN 20개: Ridge, Lasso, Tweedie GLM, 커널 Ridge, KNN 각각 $\times$ 변수 2세트(F5, F5LS) $\times$ 튜닝 없음/nested 튜닝 & 3.5 h\\
-J03–J06 & AutoGluon 변수 축: F5L, F5S, F3, F0 & 6.0 h\\
-마지막 & 결과 합치기, 앙상블, 최종 선택, 검증셋 1회 평가, 보고서·GitHub & 2 h\\
-\bottomrule
-\end{tabularx}
-
-\subsection*{B — Apple Silicon Mac (MPS) · 약 11시간}
-
-\begin{tabularx}{\linewidth}{@{}l Y r@{}}
-\toprule
-작업 & 내용 & 시간\\
-\midrule
-J07 & 딥러닝·커널·사전학습 6종 $\times$ 변수 2세트(F5, F5LS) = 12개: Tweedie MLP, TabM, RealMLP(원 목표·로그 목표), xRFM, TabPFN v2 & 4.0 h\\
-J19 & TabM, RealMLP nested 튜닝(F5LS; 학습률, 층 크기·수, 드롭아웃, 가중치 감쇠) & 7.0 h\\
-\bottomrule
-\end{tabularx}
-
-\subsection*{C — CPU 기기 (RAM 16 GB 이상) · 약 12시간}
-
-\begin{tabularx}{\linewidth}{@{}l Y r@{}}
-\toprule
-작업 & 내용 & 시간\\
-\midrule
-J09 & LightGBM nested Optuna 튜닝 50회/fold & 2.5 h\\
-J10 & XGBoost nested Optuna 튜닝 40회/fold & 3.0 h\\
-J11 & CatBoost nested Optuna 튜닝 25회/fold & 3.5 h\\
-J18 & AutoGluon 전처리 축: 제곱근 목표, 스택 2층 (F5LS) & 3.0 h\\
-\bottomrule
-\end{tabularx}
-튜닝 대상: Tweedie $p$, 이웃 반경·$k$·중심 판정 반경, 과밀도 문턱, 거대 은하 가중치, 모델 하이퍼파라미터, 그리고 \textbf{문헌 묶음 L1–L7과 친구 변수 S 각각의 포함 여부}. 바깥 5-fold의 학습부 안에서만 3-fold로 탐색하므로 평가 fold를 보지 않는다.
-
-\subsection*{D — CUDA GPU 기기 (Colab Pro, 연구실 서버 등) · 약 9.5시간}
-
-\begin{tabularx}{\linewidth}{@{}l Y r@{}}
-\toprule
-작업 & 내용 & 시간\\
-\midrule
-J12–J13 & AutoGluon 변수 축: F5LS, F5X(전부) & 3.0 h\\
-J14–J16 & AutoGluon 전처리 축(F5LS): Tweedie 모델 추가, 로그 목표, 거대 은하 가중치 2배 & 4.5 h\\
-J17 & AutoGluon \col{extreme\_quality}(TabPFNv2, TabM, RealMLP, Mitra 포함) — CUDA GPU 필요 & 2.0 h\\
-J08 & (선택, 시간이 남으면 마지막에) AutoGluon F5LS 4시간 예산 & 4.0 h\\
-\bottomrule
-\end{tabularx}
-GPU가 없으면 J17은 실패할 수 있다. 그때는 J12–J16만 돌린다.
-
-\section{튜닝과 앙상블 범위}
-
+%=============================================================
+\section{모델 실행 체계}
 \begin{tabularx}{\linewidth}{@{}l Y l@{}}
 \toprule
-모델 계열 & 튜닝 방법 & 기기\\
+단계 & 내용 & 세트\\
 \midrule
-LightGBM, XGBoost, CatBoost & nested Optuna(3-fold 안쪽 CV): 모델 하이퍼파라미터 + 물리적 선택(Tweedie $p$, 이웃 반경·$k$, 중심 판정 반경, 과밀도 문턱, 거대 은하 가중치) + 문헌 묶음 L1–L7·친구 변수 S 포함 여부 & C\\
-Ridge, Lasso, Tweedie GLM, 커널 Ridge, KNN & nested Optuna(4만 개 층화 표본의 3-fold 안쪽 CV): 스플라인 매듭 수, 규제 강도, Tweedie $p$, 커널 폭·차원, $k$·가중 방식 & A\\
-TabM, RealMLP & nested Optuna(안쪽 15\% 보류 1개, 6회): 학습률, 층 크기·수, 드롭아웃, 가중치 감쇠. 무거워서 F5LS만 & B\\
-xRFM, TabPFN & 내부 자동 조정(커널 온도) / 튜닝이 필요 없는 사전학습 모델 & B\\
-AutoGluon & 검증된 설정 묶음(zero-shot portfolio) + bagging + 스태킹 & A, C, D\\
+단일 모델 & LightGBM(기본·규제), XGBoost, CatBoost(Tweedie), RF, ExtraTrees, MLP, 로그 목표 LightGBM & F5, F5C, F5LS\\
+선형·커널·KNN & Ridge, Lasso, Tweedie GLM(스플라인), 커널 Ridge, KNN — 튜닝 없음 / nested 튜닝 & F5, F5C, F5LS\\
+딥러닝·사전학습 & Tweedie MLP, TabM, RealMLP(원·로그 목표), xRFM, TabPFN v2; TabM·RealMLP nested 튜닝 & F5, F5C, F5LS / 튜닝은 F5C\\
+트리 튜닝 & LightGBM·XGBoost·CatBoost nested Optuna: 모델 + 물리적 선택(Tweedie $p$, 반경, 문턱, 거대 은하 가중치) + 묶음 포함 여부 & F5 + 선택 묶음\\
+변수 선택 & fold 안 Boruta 선택 + LightGBM·규제·XGBoost·CatBoost & SEL(F5X), SEL(FULL)\\
+AutoGluon & 변수 축: F5(완료), F5C, F5LS, F5X, FULL, T2CORE. 전처리 축(F5C): Tweedie 추가, 로그·제곱근 목표, 거대 은하 가중치, extreme\_quality & 표 참조\\
+앙상블 & 위 모든 OOF로 가중 평균, greedy, 상위 $k$, 스태킹(음 아닌 선형, 작은 LightGBM). 모두 CV 안에서 학습 & 전부\\
 \bottomrule
 \end{tabularx}
 
-\textbf{앙상블}(A, 마지막): 끝난 실험 \textbf{전부}(단일·튜닝·선형·딥러닝·AutoGluon)의 OOF 예측이 후보다. 방법은 (1) 합이 1인 가중 평균, (2) greedy 선택, (3) 상위 3·5개 평균, (4) \textbf{스태킹}: 음 아닌 선형 메타모델(절편 포함), 작은 Tweedie LightGBM 메타모델(기반 예측 + 항성질량). 가중치와 메타모델은 모두 4개 fold로 학습해 나머지 fold에 적용한다.
-
-\section{AutoGluon 실행 목록 전체}
-\begin{tabularx}{\linewidth}{@{}l l l Y@{}}
+%=============================================================
+\section{지금까지 확인한 결과 (CV RMSE, 원래 최종 R0 = 7.401)}
+\begin{tabularx}{\linewidth}{@{}l r Y@{}}
 \toprule
-이름 & 변수 & 축 & 바꾼 것\\
+실험 & CV & R0 대비\\
 \midrule
-AG1\_F0 & F0 & 변수 & 원래 13열\\
-AG2\_F3 & F3 & 변수 & + 물리 파생\\
-AG3\_F5 & F5 & 기준 & \textbf{완료: CV 7.317}\\
-AG8\_F5L & F5L & 변수 & + 문헌 묶음\\
-AG9\_F5S & F5S & 변수 & + 친구 변수\\
-AG10\_F5LS & F5LS & 변수 & + 문헌 + 친구\\
-AG11\_F5X & F5X & 변수 & 만든 변수 전부\\
-AG12\_F5LS\_tweedie & F5LS & 손실 & Tweedie LightGBM·XGBoost 추가\\
-AG13\_F5LS\_log & F5LS & 목표 & log1p + smearing\\
-AG14\_F5LS\_sqrt & F5LS & 목표 & 제곱근 변환\\
-AG15\_F5LS\_wmassive & F5LS & 가중치 & $\log M_*>11.5$ 은하 2배\\
-AG16\_F5LS\_stack2 & F5LS & 스태킹 & 2층 추가\\
-AG17\_F5LS\_long & F5LS & 시간 & 4시간\\
-AG18\_F5LS\_extreme & F5LS & 프리셋 & extreme\_quality (GPU)\\
+AutoGluon, F5 & 7.317 & $-0.08$ (SE 0.17) — 유일하게 앞섬, 노이즈 범위\\
+LightGBM + L7(묶인 동반 은하) & 7.396 & 거의 같음\\
+LightGBM + 다른 문헌 묶음 하나씩 & 7.51–7.62 & $+0.11$–$+0.22$\\
+LightGBM + 조원 1 변수(S) & 7.562 & $+0.16$\\
+LightGBM + 문헌 전부 / 문헌 + 조원 1 & 7.94 / 7.84 & $+0.54$ / $+0.44$\\
+fold 안 Boruta 선택(153개 중 46–66개) & 7.65–7.84 & $+0.25$–$+0.44$ (모델 4종)\\
+XGBoost, CatBoost, RF, MLP 단독(F5) & 7.62–8.60 & 모두 나쁨\\
+선형·GLM(F5) & 8.70–10.0 & 크게 나쁨\\
 \bottomrule
 \end{tabularx}
+튜닝 없는 모델에서는 변수를 늘리면 일관되게 나빠졌다. 남은 질문은 튜닝·AutoGluon·딥러닝처럼 설정이 변수에 맞춰지는 방법에서도 그런가이다.
 
-\section{공통 규칙}
-\begin{itemize}
-\item 모든 기기: 같은 고정 80/20 분할, 같은 11층 층화 5-fold(seed 42). AutoGluon도 bagging fold를 이 5-fold로 강제한다.
-\item 선택은 CV로만 한다. 검증셋은 A가 마지막에 한 번만 평가한다.
-\item 결과 zip의 OOF 파일에는 학습 은하의 정답 SFR이 들어 있으므로 공개된 곳에 올리지 않는다.
-\item 코드는 고치지 않는다. 오류가 나면 로그를 그대로 공유한다.
-\item 최종 선택 규칙(실험 전에 고정): 모든 단일 모델·튜닝·AutoGluon·앙상블 가운데 \textbf{CV RMSE가 가장 낮은 것}. 앙상블 가중치도 CV 안에서 학습한다.
-\end{itemize}
+%=============================================================
+\section{기기별 작업}
+\begin{tabularx}{\linewidth}{@{}l l Y r@{}}
+\toprule
+기기 & 작업 & 내용 & 시간\\
+\midrule
+A 노트북 & J01 & 단일 모델 15개(F5C 8, F5LS 7) & 2.0 h\\
+ & J02 & 선형·커널·KNN 30개(3세트 $\times$ 5모델 $\times$ 튜닝 유무) & 4.5 h\\
+ & J20 & fold 안 변수 선택: SEL(F5X)(완료), SEL(FULL) & 1.0 h\\
+ & J21–J22 & AutoGluon F5C 로그 목표, 제곱근 목표 & 3.0 h\\
+ & 마지막 & 합치기, 앙상블·스태킹, 1-SE 최종 선택, 검증셋 1회, 보고서 & 2 h\\
+\midrule
+B Mac & J07 & 딥러닝·사전학습 18개(6모델 $\times$ F5, F5C, F5LS) & 6.0 h\\
+ & J19 & TabM·RealMLP nested 튜닝(F5C) & 5.0 h\\
+\midrule
+C CPU & J09–J11 & LightGBM 50회·XGBoost 40회·CatBoost 25회 nested 튜닝 & 9.0 h\\
+ & J23 & AutoGluon F5C 거대 은하 가중치 & 1.5 h\\
+\midrule
+D GPU & J12–J15 & AutoGluon F5C, F5LS, F5X, FULL, T2CORE & 7.5 h\\
+ & J16–J17 & AutoGluon F5C Tweedie 추가, extreme\_quality & 3.5 h\\
+\midrule
+X 선택 & J30–J31 & AutoGluon F0·F3, F5LS 4시간판 (먼저 끝난 기기) & 3–7 h\\
+\bottomrule
+\end{tabularx}
+권장 배정: B = 조원 2(Mac), D = 조원 1(Colab GPU), C = 조원 3, A = 이 노트북.
 
+%=============================================================
 \section{실행 순서}
 \begin{enumerate}
-\item \textbf{모든 기기:} 저장소 clone, 환경 설치, CSV를 \col{data/}에 둔다(HELPERS.md).
-\item \textbf{각 기기:} \col{python scripts/jobs.py run <기기>}. 꺼지면 같은 명령으로 이어서 실행한다.
-\item \textbf{각 기기:} \col{python scripts/jobs.py pack <기기>} $\to$ \col{results/pack\_<기기>.zip} 을 A에 보낸다.
-\item \textbf{A:} \col{python scripts/jobs.py unpack pack\_B.zip pack\_C.zip pack\_D.zip} $\to$ \col{python scripts/a04\_ensemble.py}.
-\item \textbf{A:} 보고서 PDF, 코드 zip, GitHub 페이지를 갱신한다.
+\item 조원 2가 \col{sfr\_features.py}를 보내면 A가 \col{src/}에 넣고 저장소에 올린다. 늦어지면 FULL·T2CORE 작업만 나중에 돌린다.
+\item 모든 기기: 같은 커밋 확인, 환경 설치, CSV 배치 $\to$ \col{python scripts/jobs.py run <기기>}.
+\item 각 기기: \col{python scripts/jobs.py pack <기기>} $\to$ zip을 A에 직접 전달(공개 금지).
+\item A: \col{jobs.py unpack} $\to$ \col{a04\_ensemble.py} $\to$ 보고서·GitHub 갱신.
 \end{enumerate}
 
 \end{document}

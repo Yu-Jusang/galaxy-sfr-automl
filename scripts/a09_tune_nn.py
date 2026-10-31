@@ -69,7 +69,7 @@ def tune(fam, X, y):
     return SPACES[fam](optuna.trial.FixedTrial(study.best_params)), float(study.best_value)
 
 
-CONFIGS = {f"NN_{fam}_F5LS_tuned": (fam, "F5LS") for fam in ("tabm", "realmlp")}   # enlarged feature set only (cost)
+CONFIGS = {f"NN_{fam}_F5C_tuned": (fam, "F5C") for fam in ("tabm", "realmlp")}   # curated set only (cost)
 
 
 def run(name):

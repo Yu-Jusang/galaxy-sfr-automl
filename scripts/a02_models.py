@@ -147,6 +147,17 @@ CONFIGS = {
     "M75_rf_F5LS": (sk(_rf), "F5LS", "RandomForest (squared error), F5LS"),
     "M76_mlp_F5LS": (mlp, "F5LS", "MLP 256-128-64, quantile inputs, log target + smearing, F5LS"),
     "M77_lgbm_logsmear_F5LS": (lgbm_log_smear, "F5LS", "LightGBM log1p target + smearing, F5LS"),
+    # the same zoo on the curated set F5C (F5 + literature L1, L3, L4, L7)
+    "M80_lgbm_tw13_F5C": (lgbm(), "F5C", "LightGBM Tweedie 1.3, F5C"),
+    "M81_lgbm_tw13_reg_F5C": (lgbm(num_leaves=15, min_child_samples=100, colsample_bytree=0.5, subsample=0.8,
+                                   subsample_freq=1, reg_lambda=5.0, learning_rate=0.03, n_estimators=3000,
+                                   es_rounds=50), "F5C", "LightGBM Tweedie 1.3, regularised, F5C"),
+    "M82_xgb_tw13_F5C": (xgb_tw(), "F5C", "XGBoost Tweedie 1.3, F5C"),
+    "M83_cat_tw13_d8_F5C": (cat(depth=8), "F5C", "CatBoost Tweedie 1.3, depth 8, F5C"),
+    "M84_et_F5C": (sk(_et), "F5C", "ExtraTrees (squared error), F5C"),
+    "M85_rf_F5C": (sk(_rf), "F5C", "RandomForest (squared error), F5C"),
+    "M86_mlp_F5C": (mlp, "F5C", "MLP 256-128-64, quantile inputs, log target + smearing, F5C"),
+    "M87_lgbm_logsmear_F5C": (lgbm_log_smear, "F5C", "LightGBM log1p target + smearing, F5C"),
 }
 
 

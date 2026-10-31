@@ -409,6 +409,36 @@ FS["F5L"] = FS["F5"] + L_COLS                 # all seven literature groups
 FS["F5+S"] = FS["F5"] + S_COLS                # teammate's 27 neighbour features
 FS["F5LS"] = FS["F5"] + L_COLS + S_COLS       # literature + teammate
 FS["F5X"] = FS["F5"] + L_COLS + S_COLS + A1_COLS + A2_COLS + G_COLS + N_COLS + L.MSSM_FEATURES   # everything engineered
+# curated a priori (literature strength + the only non-harmful group in the R0 ablation), fixed before any new runs
+FS["F5C"] = FS["F5"] + L_GROUPS["L1"] + L_GROUPS["L3"] + L_GROUPS["L4"] + L_GROUPS["L7"]
+
+# ------------------------------------------------------------------ teammate 2 module (optional)
+# If the teammate's src/sfr_features.py is present, its build_features(df) -> (FE, docs) block is added with prefix
+# "t2_" and two more sets appear: T2CORE (their core set) and FULL (ours + theirs). Nothing changes when it is absent.
+T2_PATH = ROOT / "data" / "team2_features.parquet"
+
+
+def team2_block(df):
+    if T2_PATH.exists():
+        T = pd.read_parquet(T2_PATH)
+        return T if len(T) == len(df) else None
+    try:
+        import sfr_features as T2
+    except ImportError:
+        return None
+    X13 = df.drop(columns=[L.TARGET, L.ID_COLUMN])      # the teammate module never sees the target or the ID
+    out = T2.build_features(X13)
+    FE = out[0] if isinstance(out, tuple) else out
+    FE = FE.drop(columns=[c for c in FE.columns if c in df.columns], errors="ignore")
+    FE = FE.select_dtypes(include=[np.number]).add_prefix("t2_")
+    FE.index = df.index
+    FE.to_parquet(T2_PATH)
+    try:
+        core = [c for c in T2.FEATURE_SETS["core"] if c not in df.columns]
+        (ROOT / "data" / "team2_core.json").write_text(json.dumps(["t2_" + c for c in core]))
+    except Exception:
+        pass
+    return FE
 
 
 def build_features(df):
@@ -434,6 +464,13 @@ def setup():
     if not _G:
         df = L.load_data(ROOT / "data" / "Galaxy Features with Position and Velocity for Star Formation Rate Prediction.csv")
         F = build_features(df)
+        T2 = team2_block(df)
+        if T2 is not None:
+            F = pd.concat([F, T2], axis=1)
+            core_path = ROOT / "data" / "team2_core.json"
+            t2core = json.loads(core_path.read_text()) if core_path.exists() else []
+            FS["T2CORE"] = FS["F0"] + [c for c in t2core if c in F.columns]
+            FS["FULL"] = FS["F5X"] + list(T2.columns)
         _, _, y_train, y_val = L.template_split(df)
         folds = L.make_random_folds(y_train)
         _G.update(df=df, F=F, y_train=y_train, y_val=y_val, folds=folds)

@@ -54,6 +54,16 @@ CONFIGS = {
     "AG17_F5LS_long": cfg("F5LS", "F5LS, 4-hour budget (more of the model portfolio)", hours=4.0),
     "AG18_F5LS_extreme": cfg("F5LS", "F5LS, extreme_quality (TabPFNv2 / TabM / RealMLP / Mitra; CUDA GPU)",
                              preset="extreme_quality", hours=2.0),
+    # --- revised plan: curated set F5C carries the preprocessing axis (fewer columns, less over-fitting)
+    "AG20_F5C": cfg("F5C", "F5 + literature groups L1, L3, L4, L7 (curated a priori, 47)"),
+    "AG21_FULL": cfg("FULL", "every feature: ours + teammate 2 module"),
+    "AG22_T2CORE": cfg("T2CORE", "teammate 2 core set"),
+    "AG23_F5C_tweedie": cfg("F5C", "F5C, Tweedie LightGBM / XGBoost added to the model zoo", hp=TW_HP),
+    "AG24_F5C_log": cfg("F5C", "F5C, log1p target + smearing", target="log1p"),
+    "AG25_F5C_sqrt": cfg("F5C", "F5C, square-root target", target="sqrt"),
+    "AG26_F5C_wmassive": cfg("F5C", "F5C, weight 2 on galaxies with log M* > 11.5", weight=(11.5, 2.0)),
+    "AG27_F5C_extreme": cfg("F5C", "F5C, extreme_quality (TabPFNv2 / TabM / RealMLP / Mitra; CUDA GPU)",
+                            preset="extreme_quality", hours=2.0),
 }
 
 
@@ -68,6 +78,9 @@ def run(name):
     c = CONFIGS[name]
     G = setup()
     F, ytr, yva, folds = G["F"], G["y_train"], G["y_val"], G["folds"]
+    if c["fs"] not in FS:
+        print(f"{name}: feature set {c['fs']} not available (teammate 2 module missing) - skipped", flush=True)
+        return
     cols = FS[c["fs"]]
     tr = F.loc[ytr.index, cols].reset_index(drop=True)
     y = ytr.to_numpy(float)

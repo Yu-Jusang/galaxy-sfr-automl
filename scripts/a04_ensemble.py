@@ -21,7 +21,7 @@ def base_names():
     out = []
     for f in sorted(META_DIR.glob("*.json")):
         m = json.loads(f.read_text())
-        if m.get("stage") in ("single", "autogluon", "tuned"):
+        if m.get("stage") in ("single", "autogluon", "tuned", "selected"):
             out.append(m["name"])
     return out
 
@@ -121,12 +121,18 @@ def main():
         print(f"{en:14s} CV {meta['cv_rmse_mean']:.4f}  weights {w}")
 
     # ---------------- final selection (CV only), then the validation set is read once
-    allm = [json.loads(f.read_text()) for f in sorted(META_DIR.glob("*.json"))]
-    tab = pd.DataFrame([{"name": m["name"], "stage": m["stage"], "desc": m.get("desc", ""), "cv": m["cv_rmse_mean"]}
+    allm = [json.loads(f.read_text()) for f in sorted(META_DIR.glob("*.json")) if not f.stem.endswith("_selection")]
+    tab = pd.DataFrame([{"name": m["name"], "stage": m["stage"], "desc": m.get("desc", ""), "cv": m["cv_rmse_mean"],
+                         # complexity for the 1-SE rule: number of input columns; ensembles count as the most complex
+                         "n_feat": 10_000 if m["stage"] == "ensemble" else int(m.get("n_features", 25) or 25)}
                         for m in allm]).sort_values("cv").reset_index(drop=True)
-    final = tab.iloc[0]["name"]
-    pick = {"final": final, "R0 (원래 최종)": R0}
-    for st in ("single", "tuned", "autogluon", "ensemble"):
+    best = tab.iloc[0]["name"]
+    # pre-registered rule (fixed 2026-10-31 because extra features repeatedly over-fitted): among candidates within
+    # one paired SE of the CV-best, take the one with the fewest input columns (ties -> lower CV)
+    ok = [best] + [n for n in tab.name if n != best and paired(n, best)["diff"] <= paired(n, best)["se"]]
+    final = tab[tab.name.isin(ok)].sort_values(["n_feat", "cv"]).iloc[0]["name"]
+    pick = {"final": final, "CV best": best, "R0 (원래 최종)": R0}
+    for st in ("single", "tuned", "selected", "autogluon", "ensemble"):
         sub = tab[tab.stage == st]
         if len(sub):
             pick[f"best {st}"] = sub.iloc[0]["name"]

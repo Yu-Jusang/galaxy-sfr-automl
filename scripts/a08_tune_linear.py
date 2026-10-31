@@ -112,7 +112,7 @@ def tune(fam, X, y, n_trials):
 
 
 CONFIGS = {f"LK_{fam}_{fs}{'_tuned' if tuned else ''}": (fam, fs, tuned)
-           for fs in ("F5", "F5LS") for fam in FAMILIES for tuned in (False, True)}
+           for fs in ("F5", "F5C", "F5LS") for fam in FAMILIES for tuned in (False, True)}
 
 
 def run(name):
