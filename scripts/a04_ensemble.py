@@ -1,9 +1,10 @@
-"""Stage 3: ensembles of the out-of-fold predictions, final selection, one validation evaluation.
+"""Stage 3: ensembles of the out-of-fold predictions, final selection, one test evaluation.
 
 Ensemble weights are learned *inside* the CV: for outer fold k the weights are fitted on the OOF rows of the
 other four folds and applied to fold k, so the ensemble's CV RMSE is an honest out-of-sample estimate.
-The final weights are refitted on all OOF rows and applied to the stored validation predictions.
-Final choice = lowest CV RMSE over every single model, AutoGluon run and ensemble (rule fixed before the sweep).
+The final weights are refitted on all OOF rows and applied to the stored test predictions (the template's 20% X_val).
+Final choice = lowest CV RMSE over every single model, AutoGluon run and ensemble. Afterwards every candidate's
+test RMSE is written to results/test_table.csv for transparency; it is never used for the choice.
 """
 import json
 import sys
@@ -122,21 +123,24 @@ def main():
 
     # ---------------- final selection (CV only), then the validation set is read once
     allm = [json.loads(f.read_text()) for f in sorted(META_DIR.glob("*.json")) if not f.stem.endswith("_selection")]
-    tab = pd.DataFrame([{"name": m["name"], "stage": m["stage"], "desc": m.get("desc", ""), "cv": m["cv_rmse_mean"],
-                         # complexity for the 1-SE rule: number of input columns; ensembles count as the most complex
-                         "n_feat": 10_000 if m["stage"] == "ensemble" else int(m.get("n_features", 25) or 25)}
+    tab = pd.DataFrame([{"name": m["name"], "stage": m["stage"], "features": m.get("features", ""),
+                         "n_features": m.get("n_features"), "desc": m.get("desc", ""), "cv": m["cv_rmse_mean"]}
                         for m in allm]).sort_values("cv").reset_index(drop=True)
-    best = tab.iloc[0]["name"]
-    # pre-registered rule (fixed 2026-10-31 because extra features repeatedly over-fitted): among candidates within
-    # one paired SE of the CV-best, take the one with the fewest input columns (ties -> lower CV)
-    ok = [best] + [n for n in tab.name if n != best and paired(n, best)["diff"] <= paired(n, best)["se"]]
-    final = tab[tab.name.isin(ok)].sort_values(["n_feat", "cv"]).iloc[0]["name"]
-    pick = {"final": final, "CV best": best, "R0 (원래 최종)": R0}
+    # rule: the final model is the CV-best candidate (decided on the 80% training split only)
+    final = tab.iloc[0]["name"]
+    # the 20% test split is read only after the choice; every candidate's test score is published for transparency
+    vals = {n: np.load(VAL_DIR / f"{n}.npy") for n in tab.name}
+    tab = tab.assign(**pd.DataFrame([metrics_val(yv, vals[n]) for n in tab.name]).rename(
+        columns={"val_rmse": "test_rmse", "val_mae": "test_mae", "val_r2": "test_r2"}))
+    tab["cv_rank"] = np.arange(1, len(tab) + 1)
+    tab["test_rank"] = tab.test_rmse.rank(method="min").astype(int)
+    tab.to_csv(RES / "test_table.csv", index=False, encoding="utf-8-sig")
+    pick = {"final": final, "R0 (원래 최종)": R0}
     for st in ("single", "tuned", "selected", "autogluon", "ensemble"):
         sub = tab[tab.stage == st]
         if len(sub):
             pick[f"best {st}"] = sub.iloc[0]["name"]
-    vals = {n: np.load(VAL_DIR / f"{n}.npy") for n in set(pick.values())}
+    pick["test 1위 (참고, 선택에 안 씀)"] = tab.sort_values("test_rmse").iloc[0]["name"]
     rows = []
     for lab, n in pick.items():
         rows.append({"role": lab, "name": n, "label": f"{n} ({lab})", "cv": float(tab.set_index("name").loc[n, "cv"]),
@@ -148,11 +152,14 @@ def main():
     out = {"final": final, "label": final, "val_rmse": fr["val_rmse"], "val_mae": fr["val_mae"], "val_r2": fr["val_r2"],
            "r0_val_rmse": r0r["val_rmse"], "cv": fr["cv"], "cv_diff_vs_r0": pr, "delta": bs["point"],
            "ci": [bs["ci_low"], bs["ci_high"]], "table": rows,
+           "final_test_rank": int(tab.set_index("name").loc[final, "test_rank"]), "n_candidates": len(tab),
            "regimes": L.evaluate_sfr(yv, vals[final], final).to_dict(orient="records"),
            "summary": (f"CV 1위는 {final} (CV {fr['cv']:.3f}, R0 대비 Δ {pr['diff']:+.3f}, SE {pr['se']:.3f}). "
-                       f"검증셋 RMSE {fr['val_rmse']:.3f} — R0 {r0r['val_rmse']:.3f}, 양식 HGB 9.525.")}
+                       f"test RMSE {fr['val_rmse']:.3f} (후보 {len(tab)}개 중 test {int(tab.set_index('name').loc[final, 'test_rank'])}위)"
+                       f" — R0 {r0r['val_rmse']:.3f}, 양식 HGB 9.525.")}
     (RES / "final.json").write_text(json.dumps(out, indent=1, ensure_ascii=False, default=float), encoding="utf-8")
-    set_status("final", f"final = {final}: val RMSE {fr['val_rmse']:.3f} (R0 {r0r['val_rmse']:.3f})")
+    set_status("final", f"final = {final}: test RMSE {fr['val_rmse']:.3f} (R0 {r0r['val_rmse']:.3f})")
+    sys.stdout.reconfigure(encoding="utf-8")     # Korean summary on a cp949 Windows console
     print(json.dumps(out, indent=1, ensure_ascii=False, default=float)[:3000])
 
 
