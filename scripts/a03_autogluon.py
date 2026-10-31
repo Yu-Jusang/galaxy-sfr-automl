@@ -41,6 +41,10 @@ CONFIGS = {
 def run(name):
     if done(name):
         return
+    assigned = RES / "assigned_elsewhere.json"   # configs another machine is running; skipped here
+    if assigned.exists() and name in json.loads(assigned.read_text()) and "--force" not in sys.argv:
+        print(f"{name}: assigned to another machine, skipped", flush=True)
+        return
     from autogluon.tabular import TabularPredictor
     fs, treat, hp, desc = CONFIGS[name]
     G = setup()
