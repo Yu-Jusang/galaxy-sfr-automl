@@ -309,9 +309,14 @@
    "t": "2026-10-31 09:47:13",
    "stage": "tuning",
    "msg": "T01_lgbm_tuned: outer fold 1/5 (40 trials)"
+  },
+  {
+   "t": "2026-10-31 10:05:01",
+   "stage": "tuning",
+   "msg": "T01_lgbm_tuned: outer fold 2/5 (40 trials)"
   }
  ],
  "stage": "tuning",
- "message": "T01_lgbm_tuned: outer fold 1/5 (40 trials)",
- "updated": "2026-10-31 09:47:13"
+ "message": "T01_lgbm_tuned: outer fold 2/5 (40 trials)",
+ "updated": "2026-10-31 10:05:01"
 }
