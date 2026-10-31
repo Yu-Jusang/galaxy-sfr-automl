@@ -11,11 +11,14 @@
 | D | CUDA GPU (Colab Pro, 연구실 서버) | AutoGluon 변수 축(F5C, F5LS, F5X, FULL, T2CORE), Tweedie, extreme_quality | 약 11 h |
 | X | 먼저 끝난 기기 | (선택) AutoGluon F0·F3, 4시간판 | 3–7 h |
 
-## 0. 조원 2의 변수 모듈을 쓰려면 (FULL, T2CORE 세트)
+## 0. 조원 2의 변수 모듈 (FULL, T2CORE 세트)
 
-조원 2의 `sfr_features.py`(424개 변수)를 저장소의 `src/` 폴더에 넣는다. 그러면 첫 실행 때 자동으로 `t2_` 접두사를 붙여 변수 파일에 추가한다.
-모듈은 타깃과 ID가 빠진 13개 입력 열만 받는다. 파일이 없으면 FULL, T2CORE 관련 작업은 건너뛰고 나머지는 그대로 돈다.
-**모든 기기가 같은 `sfr_features.py`를 써야 한다**(A 담당이 저장소에 올린다).
+조원 2의 `sfr_features.py`가 `src/`에 들어 있다. 첫 실행 때 이 모듈이 원본 13열을 뺀 411개 변수에 `t2_` 접두사를 붙여 변수 파일에 추가한다(약 1–2분, `data/team2_features.parquet` 340 MB).
+모듈은 타깃과 ID가 빠진 13개 입력 열만 받는다. 만들어지는 세트는 두 개다.
+- T2CORE: 원본 13열 + 조원 2의 core 28개, 모두 41개.
+- FULL: 우리 F5X 153개 + 조원 2 411개, 모두 564개.
+
+조원 2의 `SELECTED_FEATURES`(89개)는 학습 80%의 절반에서 SHAP으로 고른 목록이다. 같은 학습 행으로 CV를 재면 점수가 낙관적으로 나오므로 비교 세트에 넣지 않았다. 변수 선택은 fold 안에서 하는 SEL(FULL)이 맡는다.
 
 ## 1. 준비 (한 번, 약 20분)
 
@@ -29,7 +32,7 @@ pip install "autogluon.tabular[all,tabarena]==1.4.0" xrfm optuna
 ```
 
 - 원본 CSV(`Galaxy Features with Position and Velocity for Star Formation Rate Prediction.csv`)를 `data/`에 넣는다. SHA256 `0710e7b2…6a54`.
-- 첫 실행 때 변수 파일(`data/features_all.parquet`, 159열 + 조원 2 모듈)을 만드는 데 3–5분 걸린다.
+- 첫 실행 때 변수 파일(`data/features_all.parquet` 159열 + 조원 2 모듈 411열)을 만드는 데 5–8분 걸린다. RAM은 16 GB 이상이 안전하다.
 - Mac: 필요하면 `brew install libomp`. 딥러닝은 Apple GPU(MPS)를 자동으로 쓴다.
 - CUDA: `pip install torch --index-url https://download.pytorch.org/whl/cu121` 후 `python -c "import torch; print(torch.cuda.is_available())"`.
 - **Colab:** 세션이 끊겨도 결과가 남도록 저장소를 Google Drive 안에 clone하고, 끊기면 같은 명령으로 다시 실행한다.

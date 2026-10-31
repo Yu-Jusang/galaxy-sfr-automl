@@ -44,7 +44,7 @@
 자료 & 확인한 것 & 이번 계획에서의 처리\\
 \midrule
 조원 1 (압축 파일) & AutoGluon 확장(14개 변수) 테스트 RMSE 8.72, 주변 은하 변수 27개, 4성분 분해·SVM 탐색. \textbf{분할이 대회 양식과 다르다}: 그 테스트 20\% 중 공식 검증셋과 겹치는 행은 20\%(8,353개)뿐 & 점수·예측값은 공식 비교와 앙상블에 쓰지 않는다. 주변 은하 27개 변수는 이미 저장소에 있다(S 묶음, 주기 경계·전체 카탈로그로 통일). 분해(hurdle) 아이디어는 AutoGluon·스태킹으로 대체\\
-조원 2 (인계 문서·피처사전) & 변수 424개(25개 묶음), train 5-fold 검증에서 core(43개)가 RMSE 8.08로 가장 좋고 전부(234–328개)는 8.14–8.16으로 나빠짐 & \textbf{실제 코드 \col{sfr\_features.py}가 받은 파일에 없다}. 받으면 \col{src/}에 넣어 FULL(우리 + 조원 2)·T2CORE 세트로 자동 연결. 없으면 해당 작업만 건너뜀\\
+조원 2 (인계 문서·피처사전) & 변수 424개(25개 묶음), train 5-fold 검증에서 core(43개)가 RMSE 8.08로 가장 좋고 전부(234–328개)는 8.14–8.16으로 나빠짐 & \col{sfr\_features.py}를 받아 \col{src/}에 넣었다. 원본 13열을 뺀 411개가 \col{t2\_} 접두사로 추가된다. T2CORE = 원본 13 + core 28 = 41개, FULL = F5X 153 + 411 = 564개. 조원 2의 SHAP 선별 89개는 학습 행 절반에서 골라 CV가 낙관적이므로 제외하고, fold 안 선택 SEL(FULL)로 대신한다\\
 \bottomrule
 \end{tabularx}
 
@@ -124,7 +124,6 @@ X 선택 & J30–J31 & AutoGluon F0·F3, F5LS 4시간판 (먼저 끝난 기기) 
 %=============================================================
 \section{실행 순서}
 \begin{enumerate}
-\item 조원 2가 \col{sfr\_features.py}를 보내면 A가 \col{src/}에 넣고 저장소에 올린다. 늦어지면 FULL·T2CORE 작업만 나중에 돌린다.
 \item 모든 기기: 같은 커밋 확인, 환경 설치, CSV 배치 $\to$ \col{python scripts/jobs.py run <기기>}.
 \item 각 기기: \col{python scripts/jobs.py pack <기기>} $\to$ zip을 A에 직접 전달(공개 금지).
 \item A: \col{jobs.py unpack} $\to$ \col{a04\_ensemble.py} $\to$ 보고서·GitHub 갱신.

@@ -427,17 +427,17 @@ def team2_block(df):
     except ImportError:
         return None
     X13 = df.drop(columns=[L.TARGET, L.ID_COLUMN])      # the teammate module never sees the target or the ID
-    out = T2.build_features(X13)
-    FE = out[0] if isinstance(out, tuple) else out
+    FE, docs = T2.build_features(X13, n_jobs=N_THREADS, verbose=False)
     FE = FE.drop(columns=[c for c in FE.columns if c in df.columns], errors="ignore")
+    for c in FE.columns[FE.dtypes == "category"]:             # k-means labels -> integer codes
+        FE[c] = FE[c].cat.codes.astype(np.int16)
     FE = FE.select_dtypes(include=[np.number]).add_prefix("t2_")
     FE.index = df.index
     FE.to_parquet(T2_PATH)
-    try:
-        core = [c for c in T2.FEATURE_SETS["core"] if c not in df.columns]
-        (ROOT / "data" / "team2_core.json").write_text(json.dumps(["t2_" + c for c in core]))
-    except Exception:
-        pass
+    # their FEATURE_SETS["core"] lists groups, not columns: map groups -> columns with the returned docs table
+    core_groups = set(T2.FEATURE_SETS["core"])
+    core = docs.loc[docs.group.isin(core_groups), "feature"]
+    (ROOT / "data" / "team2_core.json").write_text(json.dumps(["t2_" + c for c in core if "t2_" + c in FE.columns]))
     return FE
 
 
