@@ -314,9 +314,64 @@
    "t": "2026-10-31 10:05:01",
    "stage": "tuning",
    "msg": "T01_lgbm_tuned: outer fold 2/5 (40 trials)"
+  },
+  {
+   "t": "2026-10-31 10:21:40",
+   "stage": "tuning",
+   "msg": "T01_lgbm_tuned: outer fold 3/5 (40 trials)"
+  },
+  {
+   "t": "2026-10-31 10:34:29",
+   "stage": "models",
+   "msg": "M50_lgbm_tw13_F5G: CV"
+  },
+  {
+   "t": "2026-10-31 10:34:39",
+   "stage": "models",
+   "msg": "M50_lgbm_tw13_F5G: CV 7.607 (0.2 min)"
+  },
+  {
+   "t": "2026-10-31 10:34:39",
+   "stage": "models",
+   "msg": "M51_lgbm_tw13_F5N: CV"
+  },
+  {
+   "t": "2026-10-31 10:34:49",
+   "stage": "models",
+   "msg": "M51_lgbm_tw13_F5N: CV 7.545 (0.2 min)"
+  },
+  {
+   "t": "2026-10-31 10:34:49",
+   "stage": "models",
+   "msg": "M52_lgbm_tw13_F5GN: CV"
+  },
+  {
+   "t": "2026-10-31 10:35:03",
+   "stage": "models",
+   "msg": "M52_lgbm_tw13_F5GN: CV 7.579 (0.2 min)"
+  },
+  {
+   "t": "2026-10-31 10:35:03",
+   "stage": "models",
+   "msg": "M53_lgbm_tw13_F5lean: CV"
+  },
+  {
+   "t": "2026-10-31 10:35:11",
+   "stage": "models",
+   "msg": "M53_lgbm_tw13_F5lean: CV 7.415 (0.1 min)"
+  },
+  {
+   "t": "2026-10-31 10:35:11",
+   "stage": "models",
+   "msg": "M54_lgbm_tw13_MAX: CV"
+  },
+  {
+   "t": "2026-10-31 10:35:30",
+   "stage": "models",
+   "msg": "M54_lgbm_tw13_MAX: CV 7.561 (0.3 min)"
   }
  ],
- "stage": "tuning",
- "message": "T01_lgbm_tuned: outer fold 2/5 (40 trials)",
- "updated": "2026-10-31 10:05:01"
+ "stage": "models",
+ "message": "M54_lgbm_tw13_MAX: CV 7.561 (0.3 min)",
+ "updated": "2026-10-31 10:35:30"
 }
