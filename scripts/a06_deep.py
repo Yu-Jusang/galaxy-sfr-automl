@@ -129,23 +129,25 @@ def mlp_tweedie(X, y, Xq, seed, p=1.3, epochs=60):
         return torch.exp(net(Zq).squeeze(1)).numpy().astype(float)
 
 
-CONFIGS = {
-    "M40_mlp_tweedie_F5": (mlp_tweedie, "MLP 256-256-128 trained on the Tweedie deviance (p = 1.3, log link)"),
-    "M41_tabm_F5": (tabm, "TabM (tuned defaults), raw target"),
-    "M42_realmlp_F5": (realmlp("raw"), "RealMLP (tuned defaults), raw target"),
-    "M43_realmlp_log_F5": (realmlp("log"), "RealMLP (tuned defaults), log1p target + smearing"),
-    "M44_xrfm_log_F5": (smear_log(xrfm_log), "xRFM (tree-partitioned Recursive Feature Machine), log1p target + smearing"),
-    "M45_tabpfn_F5": (tabpfn, "TabPFN v2, 4 estimators, context = 10,000 stratified training galaxies (CPU limit)"),
+_BASE = {
+    "M40_mlp_tweedie": (mlp_tweedie, "MLP 256-256-128 trained on the Tweedie deviance (p = 1.3, log link)"),
+    "M41_tabm": (tabm, "TabM (tuned defaults), raw target"),
+    "M42_realmlp": (realmlp("raw"), "RealMLP (tuned defaults), raw target"),
+    "M43_realmlp_log": (realmlp("log"), "RealMLP (tuned defaults), log1p target + smearing"),
+    "M44_xrfm_log": (smear_log(xrfm_log), "xRFM (tree-partitioned Recursive Feature Machine), log1p target + smearing"),
+    "M45_tabpfn": (tabpfn, "TabPFN v2, 4 estimators, context = 10,000 stratified training galaxies"),
 }
+# every model on the original feature set F5 and on F5LS (F5 + literature + teammate features)
+CONFIGS = {f"{k}_{fs}": (fn, d, fs) for fs in ("F5", "F5LS") for k, (fn, d) in _BASE.items()}
 
 
 def run(name):
     if done(name):
         return
-    fit, desc = CONFIGS[name]
+    fit, desc, fs = CONFIGS[name]
     G = setup()
     F, ytr, yva, folds = G["F"], G["y_train"], G["y_val"], G["folds"]
-    cols = FS["F5"]
+    cols = FS[fs]
     X = F.loc[ytr.index, cols].to_numpy(float); y = ytr.to_numpy(float)
     Xv = F.loc[yva.index, cols].to_numpy(float)
     t0 = time.time()
@@ -156,14 +158,14 @@ def run(name):
         oof[te] = fit(X[~te], y[~te], X[te], SEED)
     set_status("models", f"{name}: refit for validation")
     vp = fit(X, y, Xv, SEED)
-    meta = save_exp(name, oof, vp, {"stage": "single", "family": "neural/kernel/foundation", "features": "F5",
+    meta = save_exp(name, oof, vp, {"stage": "single", "family": "neural/kernel/foundation", "features": fs,
                                     "n_features": len(cols), "desc": desc, "seconds": time.time() - t0})
     set_status("models", f"{name}: CV {meta['cv_rmse_mean']:.3f} ({(time.time() - t0) / 60:.0f} min)")
     print(f"{name:24s} CV {meta['cv_rmse_mean']:.4f} ± {meta['cv_rmse_sd']:.3f}  {(time.time() - t0) / 60:.0f} min", flush=True)
 
 
 if __name__ == "__main__":
-    for n in (sys.argv[1:] or list(CONFIGS)):
+    for n in [a for a in sys.argv[1:] if not a.startswith("--")] or list(CONFIGS):
         try:
             run(n)
         except Exception as e:

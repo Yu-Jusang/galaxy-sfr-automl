@@ -20,7 +20,9 @@ import optuna  # noqa: E402
 from scipy.spatial import cKDTree  # noqa: E402
 from sklearn.model_selection import StratifiedKFold  # noqa: E402
 
-from core import A1_COLS, A2_COLS, FS, L, N_THREADS, ROOT, SEED, done, np, pd, save_exp, set_status, setup  # noqa: E402
+from core import (A1_COLS, A2_COLS, FS, L, L_GROUPS, N_THREADS, ROOT, S_COLS, SEED, done, np, pd,  # noqa: E402
+                  save_exp, set_status, setup)
+OPT_GROUPS = {**L_GROUPS, "S": S_COLS}   # literature groups L1-L7 and the teammate block S: switched on/off by Optuna
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 GRID_PATH = ROOT / "data" / "env_grid.parquet"
@@ -64,6 +66,9 @@ def make_frame(G, p, rows):
         cols.append(F.loc[rows, A2_COLS])
     elif p["extra_env"] == "A1r1+A2":
         cols.append(F.loc[rows, [c for c in A1_COLS if c.endswith("r1p0")] + A2_COLS])
+    for g, gc in OPT_GROUPS.items():
+        if p.get(f"use_{g}"):
+            cols.append(F.loc[rows, gc])
     return pd.concat(cols, axis=1).to_numpy(float)
 
 
@@ -81,7 +86,8 @@ def suggest(trial, family):
          "dense_t": trial.suggest_categorical("dense_t", [0.0, 1.4, 1.5, 1.6, 1.7, 1.8]),
          "extra_env": trial.suggest_categorical("extra_env", ["none", "A2", "A1r1+A2"]),
          "w_cut": trial.suggest_categorical("w_cut", [11.0, 11.5]),
-         "w_massive": trial.suggest_float("w_massive", 1.0, 3.0)}
+         "w_massive": trial.suggest_float("w_massive", 1.0, 3.0),
+         **{f"use_{g}": trial.suggest_categorical(f"use_{g}", [False, True]) for g in OPT_GROUPS}}
     if family == "lgbm":
         p.update(num_leaves=trial.suggest_int("num_leaves", 15, 255, log=True),
                  min_child_samples=trial.suggest_int("min_child_samples", 5, 200, log=True),
@@ -157,6 +163,7 @@ def tune(G, family, rows, n_trials, tag):
     # start from the original final model's choices so the search can only add information
     study.enqueue_trial({"power": 1.3, "k_set": "1-5-10", "r_small": 1.0, "r_large": 2.0, "r_central": 1.0,
                          "dense_t": 0.0, "extra_env": "none", "w_cut": 11.5, "w_massive": 1.0,
+                         **{f"use_{g}": False for g in OPT_GROUPS},
                          **({"num_leaves": 31, "min_child_samples": 20, "learning_rate": 0.05, "colsample_bytree": 1.0,
                              "subsample": 1.0, "reg_lambda": 0.001} if family == "lgbm" else {})})
     study.optimize(objective, n_trials=n_trials)
@@ -188,7 +195,7 @@ def main(family, n_trials):
     p, inner = tune(G, family, rows_tr, n_trials, f"{name} full")
     vp = fit_predict(family, p, make_frame(G, p, rows_tr), y, weights(G, p, rows_tr), make_frame(G, p, yva.index.to_numpy()))
     chosen.append({"fold": "full", "inner_cv": inner, **p})
-    meta = save_exp(name, oof, vp, {"stage": "tuned", "features": "F5 + tuned env", "desc":
+    meta = save_exp(name, oof, vp, {"stage": "tuned", "features": "F5 + tuned env + chosen L/S groups", "desc":
                                     f"{family} nested Optuna ({n_trials} trials/fold): model + domain parameters",
                                     "seconds": time.time() - t0, "chosen": chosen})
     pd.DataFrame(chosen).to_csv(ROOT / "results" / "meta" / f"{name}_chosen.csv", index=False)

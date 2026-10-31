@@ -369,9 +369,109 @@
    "t": "2026-10-31 10:35:30",
    "stage": "models",
    "msg": "M54_lgbm_tw13_MAX: CV 7.561 (0.3 min)"
+  },
+  {
+   "t": "2026-10-31 11:00:37",
+   "stage": "models",
+   "msg": "M61_lgbm_tw13_F5+L1: CV"
+  },
+  {
+   "t": "2026-10-31 11:00:53",
+   "stage": "models",
+   "msg": "M61_lgbm_tw13_F5+L1: CV 7.554 (0.3 min)"
+  },
+  {
+   "t": "2026-10-31 11:00:53",
+   "stage": "models",
+   "msg": "M62_lgbm_tw13_F5+L2: CV"
+  },
+  {
+   "t": "2026-10-31 11:01:07",
+   "stage": "models",
+   "msg": "M62_lgbm_tw13_F5+L2: CV 7.562 (0.2 min)"
+  },
+  {
+   "t": "2026-10-31 11:01:07",
+   "stage": "models",
+   "msg": "M63_lgbm_tw13_F5+L3: CV"
+  },
+  {
+   "t": "2026-10-31 11:01:20",
+   "stage": "models",
+   "msg": "M63_lgbm_tw13_F5+L3: CV 7.508 (0.2 min)"
+  },
+  {
+   "t": "2026-10-31 11:01:20",
+   "stage": "models",
+   "msg": "M64_lgbm_tw13_F5+L4: CV"
+  },
+  {
+   "t": "2026-10-31 11:02:13",
+   "stage": "models",
+   "msg": "M64_lgbm_tw13_F5+L4: CV 7.619 (0.9 min)"
+  },
+  {
+   "t": "2026-10-31 11:02:13",
+   "stage": "models",
+   "msg": "M65_lgbm_tw13_F5+L5: CV"
+  },
+  {
+   "t": "2026-10-31 11:02:54",
+   "stage": "models",
+   "msg": "M65_lgbm_tw13_F5+L5: CV 7.614 (0.7 min)"
+  },
+  {
+   "t": "2026-10-31 11:02:54",
+   "stage": "models",
+   "msg": "M66_lgbm_tw13_F5+L6: CV"
+  },
+  {
+   "t": "2026-10-31 11:03:10",
+   "stage": "models",
+   "msg": "M66_lgbm_tw13_F5+L6: CV 7.532 (0.3 min)"
+  },
+  {
+   "t": "2026-10-31 11:03:10",
+   "stage": "models",
+   "msg": "M67_lgbm_tw13_F5+L7: CV"
+  },
+  {
+   "t": "2026-10-31 11:03:45",
+   "stage": "models",
+   "msg": "M67_lgbm_tw13_F5+L7: CV 7.396 (0.6 min)"
+  },
+  {
+   "t": "2026-10-31 11:03:45",
+   "stage": "models",
+   "msg": "M68_lgbm_tw13_F5L: CV"
+  },
+  {
+   "t": "2026-10-31 11:04:51",
+   "stage": "models",
+   "msg": "M68_lgbm_tw13_F5L: CV 7.937 (1.1 min)"
+  },
+  {
+   "t": "2026-10-31 11:04:51",
+   "stage": "models",
+   "msg": "M69_lgbm_tw13_F5+S: CV"
+  },
+  {
+   "t": "2026-10-31 11:05:50",
+   "stage": "models",
+   "msg": "M69_lgbm_tw13_F5+S: CV 7.562 (1.0 min)"
+  },
+  {
+   "t": "2026-10-31 11:05:51",
+   "stage": "models",
+   "msg": "M70_lgbm_tw13_F5LS: CV"
+  },
+  {
+   "t": "2026-10-31 11:06:36",
+   "stage": "models",
+   "msg": "M70_lgbm_tw13_F5LS: CV 7.839 (0.8 min)"
   }
  ],
  "stage": "models",
- "message": "M54_lgbm_tw13_MAX: CV 7.561 (0.3 min)",
- "updated": "2026-10-31 10:35:30"
+ "message": "M70_lgbm_tw13_F5LS: CV 7.839 (0.8 min)",
+ "updated": "2026-10-31 11:06:36"
 }

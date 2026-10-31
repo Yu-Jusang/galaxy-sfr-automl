@@ -21,7 +21,7 @@ def base_names():
     out = []
     for f in sorted(META_DIR.glob("*.json")):
         m = json.loads(f.read_text())
-        if m.get("stage") in ("single", "autogluon"):
+        if m.get("stage") in ("single", "autogluon", "tuned"):
             out.append(m["name"])
     return out
 

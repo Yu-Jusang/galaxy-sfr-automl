@@ -131,6 +131,22 @@ CONFIGS = {
     "M54_lgbm_tw13_MAX": (lgbm(), "MAX", "LightGBM Tweedie 1.3, every engineered feature (89)"),
     "M55_cat_tw13_F5N": (cat(depth=8), "F5N", "CatBoost Tweedie 1.3, depth 8, F5N"),
     "M56_xgb_tw13_F5N": (xgb_tw(), "F5N", "XGBoost Tweedie 1.3, F5N"),
+    # literature groups one at a time, all of them, and the teammate's neighbour features (ablation, R0 recipe)
+    **{f"M6{i}_lgbm_tw13_F5+L{i}": (lgbm(), f"F5+L{i}", f"LightGBM Tweedie 1.3, F5 + literature group L{i}")
+       for i in range(1, 8)},
+    "M68_lgbm_tw13_F5L": (lgbm(), "F5L", "LightGBM Tweedie 1.3, F5 + all literature groups"),
+    "M69_lgbm_tw13_F5+S": (lgbm(), "F5+S", "LightGBM Tweedie 1.3, F5 + teammate neighbour features"),
+    "M70_lgbm_tw13_F5LS": (lgbm(), "F5LS", "LightGBM Tweedie 1.3, F5 + literature + teammate features"),
+    # model zoo on the enlarged feature set (more columns -> also a regularised LightGBM)
+    "M71_lgbm_tw13_reg_F5LS": (lgbm(num_leaves=15, min_child_samples=100, colsample_bytree=0.5, subsample=0.8,
+                                    subsample_freq=1, reg_lambda=5.0, learning_rate=0.03, n_estimators=3000,
+                                    es_rounds=50), "F5LS", "LightGBM Tweedie 1.3, regularised, F5LS"),
+    "M72_xgb_tw13_F5LS": (xgb_tw(), "F5LS", "XGBoost Tweedie 1.3, F5LS"),
+    "M73_cat_tw13_d8_F5LS": (cat(depth=8), "F5LS", "CatBoost Tweedie 1.3, depth 8, F5LS"),
+    "M74_et_F5LS": (sk(_et), "F5LS", "ExtraTrees (squared error), F5LS"),
+    "M75_rf_F5LS": (sk(_rf), "F5LS", "RandomForest (squared error), F5LS"),
+    "M76_mlp_F5LS": (mlp, "F5LS", "MLP 256-128-64, quantile inputs, log target + smearing, F5LS"),
+    "M77_lgbm_logsmear_F5LS": (lgbm_log_smear, "F5LS", "LightGBM log1p target + smearing, F5LS"),
 }
 
 

@@ -408,6 +408,7 @@ for _g, _c in L_GROUPS.items():
 FS["F5L"] = FS["F5"] + L_COLS                 # all seven literature groups
 FS["F5+S"] = FS["F5"] + S_COLS                # teammate's 27 neighbour features
 FS["F5LS"] = FS["F5"] + L_COLS + S_COLS       # literature + teammate
+FS["F5X"] = FS["F5"] + L_COLS + S_COLS + A1_COLS + A2_COLS + G_COLS + N_COLS + L.MSSM_FEATURES   # everything engineered
 
 
 def build_features(df):
