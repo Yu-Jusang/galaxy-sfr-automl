@@ -123,6 +123,14 @@ CONFIGS = {
     "M21_mlp_F5": (mlp, "F5", "MLP 256-128-64, quantile inputs, log target + smearing"),
     "M22_cat_tw13_F5A": (cat(depth=8), "F5A", "CatBoost Tweedie 1.3, depth 8, F5A"),
     "M23_xgb_tw13_F5A": (xgb_tw(), "F5A", "XGBoost Tweedie 1.3, F5A"),
+    # feature-construction variants (same R0 recipe, only the inputs change)
+    "M50_lgbm_tw13_F5G": (lgbm(), "F5G", "LightGBM Tweedie 1.3, F5 + environment grid / overdensity-step flags"),
+    "M51_lgbm_tw13_F5N": (lgbm(), "F5N", "LightGBM Tweedie 1.3, F5 + relative-at-fixed-mass / neighbour-average features"),
+    "M52_lgbm_tw13_F5GN": (lgbm(), "F5GN", "LightGBM Tweedie 1.3, F5 + G + N"),
+    "M53_lgbm_tw13_F5lean": (lgbm(), "F5lean", "LightGBM Tweedie 1.3, F5 without the three weakest columns"),
+    "M54_lgbm_tw13_MAX": (lgbm(), "MAX", "LightGBM Tweedie 1.3, every engineered feature (89)"),
+    "M55_cat_tw13_F5N": (cat(depth=8), "F5N", "CatBoost Tweedie 1.3, depth 8, F5N"),
+    "M56_xgb_tw13_F5N": (xgb_tw(), "F5N", "XGBoost Tweedie 1.3, F5N"),
 }
 
 
