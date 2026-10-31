@@ -67,25 +67,24 @@ F5X & 153 & 만든 변수 전부(F5 + L + S + A1 + A2 + G + N + MSSM)\\
 작업 & 내용 & 시간\\
 \midrule
 J01 & F5LS 단일 모델 7개: 규제 LightGBM, XGBoost, CatBoost, ExtraTrees, RF, MLP, 로그 목표 LightGBM & 1.0 h\\
-J02 & 선형·커널 나머지 3개: Nystroem 커널 Ridge, KNN 두 가지 & 0.5 h\\
+J02 & 선형·커널·KNN 20개: Ridge, Lasso, Tweedie GLM, 커널 Ridge, KNN 각각 $\times$ 변수 2세트(F5, F5LS) $\times$ 튜닝 없음/nested 튜닝 & 3.5 h\\
 J03–J06 & AutoGluon 변수 축: F5L, F5S, F3, F0 & 6.0 h\\
-J18 & AutoGluon 전처리 축: 제곱근 목표, 스택 2층 (F5LS) & 3.0 h\\
 마지막 & 결과 합치기, 앙상블, 최종 선택, 검증셋 1회 평가, 보고서·GitHub & 2 h\\
 \bottomrule
 \end{tabularx}
 
-\subsection*{B — Apple Silicon Mac (MPS) · 약 8시간}
+\subsection*{B — Apple Silicon Mac (MPS) · 약 11시간}
 
 \begin{tabularx}{\linewidth}{@{}l Y r@{}}
 \toprule
 작업 & 내용 & 시간\\
 \midrule
 J07 & 딥러닝·커널·사전학습 6종 $\times$ 변수 2세트(F5, F5LS) = 12개: Tweedie MLP, TabM, RealMLP(원 목표·로그 목표), xRFM, TabPFN v2 & 4.0 h\\
-J08 & AutoGluon F5LS, 4시간 예산(모델 묶음을 더 많이 학습) & 4.0 h\\
+J19 & TabM, RealMLP nested 튜닝(F5LS; 학습률, 층 크기·수, 드롭아웃, 가중치 감쇠) & 7.0 h\\
 \bottomrule
 \end{tabularx}
 
-\subsection*{C — CPU 기기 (RAM 16 GB 이상) · 약 9시간}
+\subsection*{C — CPU 기기 (RAM 16 GB 이상) · 약 12시간}
 
 \begin{tabularx}{\linewidth}{@{}l Y r@{}}
 \toprule
@@ -94,6 +93,7 @@ J08 & AutoGluon F5LS, 4시간 예산(모델 묶음을 더 많이 학습) & 4.0 h
 J09 & LightGBM nested Optuna 튜닝 50회/fold & 2.5 h\\
 J10 & XGBoost nested Optuna 튜닝 40회/fold & 3.0 h\\
 J11 & CatBoost nested Optuna 튜닝 25회/fold & 3.5 h\\
+J18 & AutoGluon 전처리 축: 제곱근 목표, 스택 2층 (F5LS) & 3.0 h\\
 \bottomrule
 \end{tabularx}
 튜닝 대상: Tweedie $p$, 이웃 반경·$k$·중심 판정 반경, 과밀도 문턱, 거대 은하 가중치, 모델 하이퍼파라미터, 그리고 \textbf{문헌 묶음 L1–L7과 친구 변수 S 각각의 포함 여부}. 바깥 5-fold의 학습부 안에서만 3-fold로 탐색하므로 평가 fold를 보지 않는다.
@@ -107,9 +107,26 @@ J11 & CatBoost nested Optuna 튜닝 25회/fold & 3.5 h\\
 J12–J13 & AutoGluon 변수 축: F5LS, F5X(전부) & 3.0 h\\
 J14–J16 & AutoGluon 전처리 축(F5LS): Tweedie 모델 추가, 로그 목표, 거대 은하 가중치 2배 & 4.5 h\\
 J17 & AutoGluon \col{extreme\_quality}(TabPFNv2, TabM, RealMLP, Mitra 포함) — CUDA GPU 필요 & 2.0 h\\
+J08 & (선택, 시간이 남으면 마지막에) AutoGluon F5LS 4시간 예산 & 4.0 h\\
 \bottomrule
 \end{tabularx}
 GPU가 없으면 J17은 실패할 수 있다. 그때는 J12–J16만 돌린다.
+
+\section{튜닝과 앙상블 범위}
+
+\begin{tabularx}{\linewidth}{@{}l Y l@{}}
+\toprule
+모델 계열 & 튜닝 방법 & 기기\\
+\midrule
+LightGBM, XGBoost, CatBoost & nested Optuna(3-fold 안쪽 CV): 모델 하이퍼파라미터 + 물리적 선택(Tweedie $p$, 이웃 반경·$k$, 중심 판정 반경, 과밀도 문턱, 거대 은하 가중치) + 문헌 묶음 L1–L7·친구 변수 S 포함 여부 & C\\
+Ridge, Lasso, Tweedie GLM, 커널 Ridge, KNN & nested Optuna(4만 개 층화 표본의 3-fold 안쪽 CV): 스플라인 매듭 수, 규제 강도, Tweedie $p$, 커널 폭·차원, $k$·가중 방식 & A\\
+TabM, RealMLP & nested Optuna(안쪽 15\% 보류 1개, 6회): 학습률, 층 크기·수, 드롭아웃, 가중치 감쇠. 무거워서 F5LS만 & B\\
+xRFM, TabPFN & 내부 자동 조정(커널 온도) / 튜닝이 필요 없는 사전학습 모델 & B\\
+AutoGluon & 검증된 설정 묶음(zero-shot portfolio) + bagging + 스태킹 & A, C, D\\
+\bottomrule
+\end{tabularx}
+
+\textbf{앙상블}(A, 마지막): 끝난 실험 \textbf{전부}(단일·튜닝·선형·딥러닝·AutoGluon)의 OOF 예측이 후보다. 방법은 (1) 합이 1인 가중 평균, (2) greedy 선택, (3) 상위 3·5개 평균, (4) \textbf{스태킹}: 음 아닌 선형 메타모델(절편 포함), 작은 Tweedie LightGBM 메타모델(기반 예측 + 항성질량). 가중치와 메타모델은 모두 4개 fold로 학습해 나머지 fold에 적용한다.
 
 \section{AutoGluon 실행 목록 전체}
 \begin{tabularx}{\linewidth}{@{}l l l Y@{}}

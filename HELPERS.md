@@ -5,10 +5,10 @@
 
 | 기기 | 역할 | 맡은 작업 | 예상 시간 |
 |---|---|---|---|
-| A | 조정용 노트북(Windows, GPU 없음) | 단일 모델 확장, 선형·커널, AutoGluon 변수 축(F0·F3·F5L·F5S), sqrt 목표·스택 2층, 최종 앙상블 | 약 10.5 h |
-| B | Apple Silicon Mac (MPS) | 딥러닝·커널·사전학습 12개(TabM, RealMLP×2, xRFM, TabPFN, Tweedie MLP × F5/F5LS), AutoGluon 4시간판 | 약 8 h |
-| C | CPU, RAM 16 GB 이상 | nested Optuna 튜닝: LightGBM 50회, XGBoost 40회, CatBoost 25회 (변수 묶음 포함 여부도 튜닝) | 약 9 h |
-| D | CUDA GPU 있으면 최고(Colab Pro, 연구실 서버) | AutoGluon 전처리 축(F5LS, 전체 변수, Tweedie, 로그 목표, 거대 은하 가중치), extreme_quality | 약 9.5 h |
+| A | 조정용 노트북(Windows, GPU 없음) | 단일 모델 확장, 선형·커널·KNN 20개(튜닝 포함), AutoGluon 변수 축(F0·F3·F5L·F5S), 최종 앙상블·스태킹 | 약 10.5 h |
+| B | Apple Silicon Mac (MPS) | 딥러닝·커널·사전학습 12개(TabM, RealMLP×2, xRFM, TabPFN, Tweedie MLP × F5/F5LS), TabM·RealMLP 튜닝 | 약 11 h |
+| C | CPU, RAM 16 GB 이상 | nested Optuna 튜닝: LightGBM 50회, XGBoost 40회, CatBoost 25회 (변수 묶음 포함 여부도 튜닝), AutoGluon 제곱근 목표·스택 2층 | 약 12 h |
+| D | CUDA GPU 있으면 최고(Colab Pro, 연구실 서버) | AutoGluon 전처리 축(F5LS, 전체 변수, Tweedie, 로그 목표, 거대 은하 가중치), extreme_quality, (선택) 4시간판 | 약 9.5 h (+4 h) |
 
 ## 1. 준비 (한 번, 약 20분)
 

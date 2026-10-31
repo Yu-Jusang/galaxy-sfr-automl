@@ -8,8 +8,8 @@ usage:
 
 Machine roles (see report/distribution_plan.pdf):
   A  coordinator laptop (Windows, 16 threads, 16 GB, no GPU)      cheap single models + feature-axis AutoGluon + final ensemble
-  B  Apple-silicon Mac (MPS)                                      neural / kernel / foundation models + long AutoGluon
-  C  any CPU machine with >= 16 GB RAM                            nested Optuna tuning (LightGBM, XGBoost, CatBoost)
+  B  Apple-silicon Mac (MPS)                                      neural / kernel / foundation models + NN tuning
+  C  any CPU machine with >= 16 GB RAM                            nested Optuna tuning (trees) + two AutoGluon runs
   D  machine with a CUDA GPU if available (Colab, lab server)     AutoGluon preprocessing axis + extreme_quality
 """
 import json
@@ -24,12 +24,14 @@ PY = sys.executable
 
 M = "scripts/a02_models.py"; LK = "scripts/a05_linear_kernel.py"; DP = "scripts/a06_deep.py"
 AG = "scripts/a03_autogluon.py"; TU = "scripts/a07_tune.py"
+LT = "scripts/a08_tune_linear.py"; NT = "scripts/a09_tune_nn.py"
 
 # (job id, machine, script, args, result names, estimated hours on that machine)
 JOBS = [
     ("J01", "A", M, ["M71_lgbm_tw13_reg_F5LS", "M72_xgb_tw13_F5LS", "M73_cat_tw13_d8_F5LS", "M74_et_F5LS",
                      "M75_rf_F5LS", "M76_mlp_F5LS", "M77_lgbm_logsmear_F5LS"], None, 1.0),
-    ("J02", "A", LK, ["M35_nystroem_ridge_log_F5", "M36_knn_F5", "M37_knn_log_F5"], None, 0.5),
+    ("J02", "A", LT, [f"LK_{f}_{fs}{t}" for fs in ("F5", "F5LS") for f in
+                      ("ridge", "lasso", "tweedie_glm", "kernel_ridge", "knn") for t in ("", "_tuned")], None, 3.5),
     ("J03", "A", AG, ["AG8_F5L"], None, 1.5),
     ("J04", "A", AG, ["AG9_F5S"], None, 1.5),
     ("J05", "A", AG, ["AG2_F3"], None, 1.5),
@@ -37,7 +39,7 @@ JOBS = [
     ("J07", "B", DP, [f"{k}_{fs}" for fs in ("F5", "F5LS") for k in
                       ("M40_mlp_tweedie", "M41_tabm", "M42_realmlp", "M43_realmlp_log", "M44_xrfm_log", "M45_tabpfn")],
      None, 4.0),
-    ("J08", "B", AG, ["AG17_F5LS_long"], None, 4.0),
+    ("J19", "B", NT, ["NN_tabm_F5LS_tuned", "NN_realmlp_F5LS_tuned"], None, 7.0),
     ("J09", "C", TU, ["lgbm", "50"], ["T01_lgbm_tuned"], 2.5),
     ("J10", "C", TU, ["xgb", "40"], ["T02_xgb_tuned"], 3.0),
     ("J11", "C", TU, ["cat", "25"], ["T03_cat_tuned"], 3.5),
@@ -47,7 +49,8 @@ JOBS = [
     ("J15", "D", AG, ["AG13_F5LS_log"], None, 1.5),
     ("J16", "D", AG, ["AG15_F5LS_wmassive"], None, 1.5),
     ("J17", "D", AG, ["AG18_F5LS_extreme"], None, 2.0),
-    ("J18", "A", AG, ["AG14_F5LS_sqrt", "AG16_F5LS_stack2"], None, 3.0),
+    ("J18", "C", AG, ["AG14_F5LS_sqrt", "AG16_F5LS_stack2"], None, 3.0),
+    ("J08", "D", AG, ["AG17_F5LS_long"], None, 4.0),   # optional: run last, if time allows
 ]
 
 
