@@ -234,9 +234,19 @@
    "t": "2026-10-31 06:16:25",
    "stage": "autogluon",
    "msg": "AG3_F5: fitting (limit 1.5 h)"
+  },
+  {
+   "t": "2026-10-31 07:47:15",
+   "stage": "autogluon",
+   "msg": "AG3_F5: CV 7.317 (91 min, best WeightedEnsemble_L3)"
+  },
+  {
+   "t": "2026-10-31 07:47:22",
+   "stage": "autogluon",
+   "msg": "AG6_F5_tweedie: fitting (limit 1.5 h)"
   }
  ],
  "stage": "autogluon",
- "message": "AG3_F5: fitting (limit 1.5 h)",
- "updated": "2026-10-31 06:16:25"
+ "message": "AG6_F5_tweedie: fitting (limit 1.5 h)",
+ "updated": "2026-10-31 07:47:22"
 }
