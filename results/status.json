@@ -244,9 +244,74 @@
    "t": "2026-10-31 07:47:22",
    "stage": "autogluon",
    "msg": "AG6_F5_tweedie: fitting (limit 1.5 h)"
+  },
+  {
+   "t": "2026-10-31 09:19:06",
+   "stage": "autogluon",
+   "msg": "AG6_F5_tweedie: fitting (limit 1.5 h)"
+  },
+  {
+   "t": "2026-10-31 09:26:40",
+   "stage": "models",
+   "msg": "M30_ridge_log_F5: CV"
+  },
+  {
+   "t": "2026-10-31 09:27:15",
+   "stage": "models",
+   "msg": "M30_ridge_log_F5: CV 10.014 (0.6 min)"
+  },
+  {
+   "t": "2026-10-31 09:27:15",
+   "stage": "models",
+   "msg": "M31_ridge_spline_log_F5: CV"
+  },
+  {
+   "t": "2026-10-31 09:31:03",
+   "stage": "models",
+   "msg": "M31_ridge_spline_log_F5: CV 9.044 (3.8 min)"
+  },
+  {
+   "t": "2026-10-31 09:31:03",
+   "stage": "models",
+   "msg": "M32_lasso_spline_log_F5: CV"
+  },
+  {
+   "t": "2026-10-31 09:40:45",
+   "stage": "models",
+   "msg": "M32_lasso_spline_log_F5: CV 9.665 (9.7 min)"
+  },
+  {
+   "t": "2026-10-31 09:40:45",
+   "stage": "models",
+   "msg": "M33_tweedie_glm_F5: CV"
+  },
+  {
+   "t": "2026-10-31 09:43:30",
+   "stage": "models",
+   "msg": "M33_tweedie_glm_F5: CV 8.772 (2.7 min)"
+  },
+  {
+   "t": "2026-10-31 09:43:30",
+   "stage": "models",
+   "msg": "M34_poisson_spline_glm_F5: CV"
+  },
+  {
+   "t": "2026-10-31 09:44:03",
+   "stage": "models",
+   "msg": "M34_poisson_spline_glm_F5: CV 8.697 (0.6 min)"
+  },
+  {
+   "t": "2026-10-31 09:44:03",
+   "stage": "models",
+   "msg": "M35_nystroem_ridge_log_F5: CV"
+  },
+  {
+   "t": "2026-10-31 09:47:13",
+   "stage": "tuning",
+   "msg": "T01_lgbm_tuned: outer fold 1/5 (40 trials)"
   }
  ],
- "stage": "autogluon",
- "message": "AG6_F5_tweedie: fitting (limit 1.5 h)",
- "updated": "2026-10-31 07:47:22"
+ "stage": "tuning",
+ "message": "T01_lgbm_tuned: outer fold 1/5 (40 trials)",
+ "updated": "2026-10-31 09:47:13"
 }
