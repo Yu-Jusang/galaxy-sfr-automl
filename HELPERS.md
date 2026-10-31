@@ -15,6 +15,7 @@ pip install "autogluon.tabular[all,tabarena]==1.4.0" xrfm optuna
 
 - 원본 CSV(`Galaxy Features with Position and Velocity for Star Formation Rate Prediction.csv`)를 `data/` 폴더에 넣는다.
   CSV는 저장소에 없다. 팀원에게 직접 받는다.
+- Mac(Apple Silicon)은 LightGBM용으로 `brew install libomp`가 필요할 수 있다. 딥러닝 모델은 Apple GPU(MPS)를 자동으로 쓴다.
 - NVIDIA GPU가 있으면 PyTorch를 CUDA판으로 설치하면 딥러닝 모델이 자동으로 GPU를 쓴다:
   `pip install torch --index-url https://download.pytorch.org/whl/cu121`
 
@@ -24,9 +25,8 @@ pip install "autogluon.tabular[all,tabarena]==1.4.0" xrfm optuna
 
 | 담당 | 명령 | CPU 기준 시간 |
 |---|---|---|
-| A | `python scripts/a03_autogluon.py AG2_F3 AG5_ALL AG1_F0 AG7_F5_log --force` | 약 6시간 |
-| B | `python scripts/a03_autogluon.py AG4_F5A --force` | 약 1.5시간 |
-| B | `python scripts/a06_deep.py` | GPU 1–2시간 / CPU 4–6시간 |
+| 1 | `python scripts/a06_deep.py` | GPU·Apple GPU 1–2시간 / CPU 4–6시간 |
+| 2 | `python scripts/a03_autogluon.py AG4_F5A AG2_F3 AG5_ALL AG1_F0 AG7_F5_log --force` | 약 7.5시간 (설정당 최대 1.5시간) |
 
 스레드 수는 `SFR_N_THREADS` 환경변수로 바꿀 수 있다(기본 14).
 컴퓨터가 절전으로 들어가지 않게 전원을 연결하고 덮개를 열어 둔다.

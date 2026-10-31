@@ -22,7 +22,8 @@ os.environ.setdefault("TABPFN_ALLOW_CPU_LARGE_DATASET", "1")
 FIT_SECONDS = int(os.environ.get("DEEP_FIT_SECONDS", "900"))  # CPU cap per fit for TabM / RealMLP
 
 torch.set_num_threads(N_THREADS)
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"   # a friend's GPU machine is used automatically
+DEVICE = ("cuda" if torch.cuda.is_available() else
+          "mps" if torch.backends.mps.is_available() else "cpu")   # GPU / Apple GPU used automatically
 
 
 def smear_log(fit_log):
