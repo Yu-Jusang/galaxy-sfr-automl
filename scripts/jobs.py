@@ -3,7 +3,9 @@
 usage:
   python scripts/jobs.py list                 # show every job, its machine and estimated hours
   python scripts/jobs.py run <A|B|C|D>        # run all jobs assigned to that machine (skips finished ones)
+  python scripts/jobs.py run J15 J17          # run only these jobs (e.g. ones that failed elsewhere)
   python scripts/jobs.py pack <A|B|C|D>       # zip that machine's results into results/pack_<M>.zip
+  python scripts/jobs.py pack J15 J17         # zip only these jobs into results/pack_rerun.zip
   python scripts/jobs.py unpack <zip> ...     # merge result zips from other machines (on machine A)
 
 Machine roles (see report/distribution_plan.pdf):
@@ -85,11 +87,24 @@ def cmd_list():
     print("hours per machine:", {k: round(v, 1) for k, v in sorted(tot.items())})
 
 
-def cmd_run(mach):
-    env = dict(os.environ, SFR_MACHINE=mach, PYTHONWARNINGS="ignore")
-    if mach == "C":
-        env.setdefault("SFR_N_THREADS", str(os.cpu_count() or 8))
-    for j in [j for j in JOBS if j[1] == mach]:
+def select(keys):
+    """One machine letter -> its jobs; otherwise a list of job ids."""
+    if len(keys) == 1 and keys[0] in {j[1] for j in JOBS}:
+        return [j for j in JOBS if j[1] == keys[0]]
+    ids = {j[0] for j in JOBS}
+    bad = [k for k in keys if k not in ids]
+    if bad:
+        sys.exit(f"unknown job id(s): {bad}")
+    return [j for j in JOBS if j[0] in keys]
+
+
+def cmd_run(keys):
+    rerun = not (len(keys) == 1 and keys[0] in {j[1] for j in JOBS})   # job ids: use every core of this machine
+    for j in select(keys):
+        mach = j[1]
+        env = dict(os.environ, SFR_MACHINE=mach, PYTHONWARNINGS="ignore")
+        if mach == "C" or rerun:
+            env.setdefault("SFR_N_THREADS", str(os.cpu_count() or 8))
         if all(is_done(n) for n in names(j)):
             print(f"{j[0]} already done", flush=True)
             continue
@@ -103,10 +118,12 @@ def cmd_run(mach):
         print(f"{j[0]} {'finished' if all(is_done(n) for n in names(j)) else 'FAILED - see ' + str(log)}", flush=True)
 
 
-def cmd_pack(mach):
-    out = ROOT / "results" / f"pack_{mach}.zip"
+def cmd_pack(keys):
+    tag = keys[0] if len(keys) == 1 and keys[0] in {j[1] for j in JOBS} else "rerun"
+    out = ROOT / "results" / f"pack_{tag}.zip"
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
-        for j in [j for j in JOBS if j[1] == mach]:
+        for j in select(keys):
+            mach = j[1]
             for n in names(j):
                 for sub, ext in (("oof", ".parquet"), ("val", ".npy"), ("meta", ".json"), ("meta", "_leaderboard.csv"),
                                  ("meta", "_chosen.csv")):
@@ -128,5 +145,5 @@ def cmd_unpack(zips):
 
 if __name__ == "__main__":
     a = sys.argv[1:]
-    {"list": lambda: cmd_list(), "run": lambda: cmd_run(a[1]), "pack": lambda: cmd_pack(a[1]),
+    {"list": lambda: cmd_list(), "run": lambda: cmd_run(a[1:]), "pack": lambda: cmd_pack(a[1:]),
      "unpack": lambda: cmd_unpack(a[1:])}[a[0]]()
