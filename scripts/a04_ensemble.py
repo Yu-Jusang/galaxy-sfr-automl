@@ -18,12 +18,19 @@ from core import META_DIR, RES, VAL_DIR, L, load_oof, np, paired, pd, save_exp, 
 R0 = "M01_lgbm_tw13_F5"
 
 
-def base_names():
-    out = []
+def base_names(y):
+    """Base experiments for the ensembles. A model whose OOF predictions are non-finite or exceed 10x the largest
+    training SFR has diverged (e.g. a log-link GLM overflowing); it stays in the candidate table but is not blended.
+    The check reads OOF predictions only, never the test set."""
+    out, cap = [], 10 * y.max()
     for f in sorted(META_DIR.glob("*.json")):
         m = json.loads(f.read_text())
         if m.get("stage") in ("single", "autogluon", "tuned", "selected"):
-            out.append(m["name"])
+            p = load_oof(m["name"])
+            if np.isfinite(p).all() and p.max() <= cap:
+                out.append(m["name"])
+            else:
+                print(f"excluded from ensembles (diverged OOF, max {np.nanmax(p):.3g}): {m['name']}")
     return out
 
 
@@ -108,7 +115,7 @@ def metrics_val(yv, p):
 def main():
     G = setup()
     y = G["y_train"].to_numpy(float); yv = G["y_val"].to_numpy(float); folds = G["folds"]
-    names = base_names()
+    names = base_names(y)
     P = np.column_stack([load_oof(n) for n in names])
     Pv = np.column_stack([np.load(VAL_DIR / f"{n}.npy") for n in names])
     E = G["F"].loc[G["y_train"].index, ["log10_stellar_mass"]].to_numpy(float)
