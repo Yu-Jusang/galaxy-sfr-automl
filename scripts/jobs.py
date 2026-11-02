@@ -2,7 +2,7 @@
 
 usage:
   python scripts/jobs.py list                 # show every job, its machine and estimated hours
-  python scripts/jobs.py run <A|B|C|D>        # run all jobs assigned to that machine (skips finished ones)
+  python scripts/jobs.py run <A|B|C|D|B1|B2|B3>   # run all jobs assigned to that machine (skips finished ones)
   python scripts/jobs.py run J15 J17          # run only these jobs (e.g. ones that failed elsewhere)
   python scripts/jobs.py pack <A|B|C|D>       # zip that machine's results into results/pack_<M>.zip
   python scripts/jobs.py pack J15 J17         # zip only these jobs into results/pack_rerun.zip
@@ -15,9 +15,14 @@ Machine roles (see report/distribution_plan.pdf):
   C  any CPU machine with >= 16 GB RAM                            nested Optuna tuning (trees) + 1 AutoGluon run
   D  machine with a CUDA GPU if available (Colab, lab server)     AutoGluon feature axis + preprocessing + extreme
   X  optional jobs for whichever machine finishes first
+  B1-B3  the B models that failed or were too slow on CPU (2026-11-02), rerun on three teammate laptops after the
+         missing-value fix: B1 TabM (+ MLP, one RealMLP), B2 RealMLP + its tuning, B3 xRFM + TabPFN
+Neural / kernel / foundation models (a06, a09) run one model per subprocess with a wall-clock cap (cap_hours; override
+with SFR_MODEL_HOURS); a stopped model is listed in results/logs/timeouts.json and the next one starts.
 """
 import json
 import os
+import signal
 import subprocess
 import sys
 import zipfile
@@ -63,6 +68,13 @@ JOBS = [
     ("J15", "D", AG, ["AG21_FULL", "AG22_T2CORE"], None, 3.0),
     ("J16", "D", AG, ["AG23_F5C_tweedie"], None, 1.5),
     ("J17", "D", AG, ["AG27_F5C_extreme"], None, 2.0),
+    # ---------------- B rerun on three laptops (J07 / J19 leftovers; F5 MLP / RealMLP already done on B)
+    ("J40", "B1", DP, ["M41_tabm_F5", "M41_tabm_F5C", "M41_tabm_F5LS", "M40_mlp_tweedie_F5C", "M40_mlp_tweedie_F5LS",
+                       "M43_realmlp_log_F5LS"], None, 8.0),
+    ("J41", "B1", NT, ["NN_tabm_F5C_tuned"], None, 3.5),
+    ("J42", "B2", DP, ["M42_realmlp_F5C", "M42_realmlp_F5LS", "M43_realmlp_log_F5C"], None, 6.5),
+    ("J43", "B2", NT, ["NN_realmlp_F5C_tuned"], None, 3.5),
+    ("J44", "B3", DP, [f"{k}_{fs}" for k in ("M44_xrfm_log", "M45_tabpfn") for fs in ("F5", "F5C", "F5LS")], None, 10.0),
     # ---------------- optional, whichever machine finishes first (run with: python scripts/jobs.py run X)
     ("J30", "X", AG, ["AG1_F0", "AG2_F3"], None, 3.0),
     ("J31", "X", AG, ["AG17_F5LS_long"], None, 4.0),
@@ -98,12 +110,46 @@ def select(keys):
     return [j for j in JOBS if j[0] in keys]
 
 
+TIMEOUTS = ROOT / "results" / "logs" / "timeouts.json"
+
+
+def cap_hours(script, name):
+    """Wall-clock cap per model: above the worst case of the capped fits (TabM / RealMLP 15 min per fit, NN tuning
+    5 min per trial), and 2 h for xRFM / TabPFN, whose fits have no cap of their own."""
+    if os.environ.get("SFR_MODEL_HOURS"):
+        return float(os.environ["SFR_MODEL_HOURS"])
+    if name.startswith(("M44_", "M45_")):
+        return 2.0
+    return 5.0 if script == NT else 4.0
+
+
+def run_capped(cmd, env, fh, name, hours):
+    """One model in its own process; stop it (and its children) after `hours` and record the timeout."""
+    win = os.name == "nt"
+    p = subprocess.Popen(cmd, cwd=ROOT, env=env, stdout=fh, stderr=subprocess.STDOUT,
+                         **({} if win else {"start_new_session": True}))
+    try:
+        p.wait(timeout=hours * 3600)
+    except subprocess.TimeoutExpired:
+        if win:
+            subprocess.run(["taskkill", "/T", "/F", "/PID", str(p.pid)], capture_output=True)
+        else:
+            os.killpg(p.pid, signal.SIGKILL)
+        p.wait()
+        t = json.loads(TIMEOUTS.read_text(encoding="utf-8")) if TIMEOUTS.exists() else {}
+        t[name] = {"hours": hours, "machine": env.get("SFR_MACHINE", "")}
+        TIMEOUTS.write_text(json.dumps(t, indent=1), encoding="utf-8")
+        fh.write(f"\n[jobs.py] {name} stopped after {hours} h (time cap)\n")
+        fh.flush()
+        print(f"  {name} stopped after {hours} h", flush=True)
+
+
 def cmd_run(keys):
     rerun = not (len(keys) == 1 and keys[0] in {j[1] for j in JOBS})   # job ids: use every core of this machine
     for j in select(keys):
         mach = j[1]
         env = dict(os.environ, SFR_MACHINE=mach, PYTHONWARNINGS="ignore")
-        if mach == "C" or rerun:
+        if mach in ("C", "B1", "B2", "B3") or rerun:   # teammate laptops: as many threads as cores
             env.setdefault("SFR_N_THREADS", str(os.cpu_count() or 8))
         if all(is_done(n) for n in names(j)):
             print(f"{j[0]} already done", flush=True)
@@ -112,9 +158,14 @@ def cmd_run(keys):
         log = ROOT / "results" / "logs" / f"{j[0]}_{mach}.log"
         log.parent.mkdir(parents=True, exist_ok=True)
         with open(log, "a", encoding="utf-8") as fh:
-            extra = ["--force"] if j[2] == AG else []
-            subprocess.run([PY, "-X", "utf8", j[2], *j[3], *extra], cwd=ROOT, env=env, stdout=fh,
-                           stderr=subprocess.STDOUT)
+            if j[2] in (DP, NT):   # neural / kernel / foundation: one model per process, each capped in time
+                for n in names(j):
+                    if not is_done(n):
+                        run_capped([PY, "-X", "utf8", j[2], n], env, fh, n, cap_hours(j[2], n))
+            else:
+                extra = ["--force"] if j[2] == AG else []
+                subprocess.run([PY, "-X", "utf8", j[2], *j[3], *extra], cwd=ROOT, env=env, stdout=fh,
+                               stderr=subprocess.STDOUT)
         print(f"{j[0]} {'finished' if all(is_done(n) for n in names(j)) else 'FAILED - see ' + str(log)}", flush=True)
 
 
@@ -133,6 +184,8 @@ def cmd_pack(keys):
             log = ROOT / "results" / "logs" / f"{j[0]}_{mach}.log"
             if log.exists():
                 z.write(log, f"results/logs/{log.name}")
+        if TIMEOUTS.exists():
+            z.write(TIMEOUTS, "results/logs/timeouts.json")
     print("wrote", out)
 
 

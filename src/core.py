@@ -8,6 +8,7 @@ metrics and the physics / neighbour features. Every experiment writes
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import sys
@@ -497,6 +498,35 @@ def save_exp(name, oof, val_pred, info):
 
 def done(name):
     return (META_DIR / f"{name}.json").exists()
+
+
+def impute_missing(X, Xq):
+    """Median imputation + missing indicators for the neural / kernel / foundation models (trees take NaN natively).
+    Missing values are structural (L4: no heavier host; L6: no neighbour in the tidal shell), so a 0/1 indicator per
+    column that has missing values in X keeps that information. Medians come from the fitting rows X only.
+    Without missing values X and Xq are returned unchanged (F5 results are not affected)."""
+    miss = np.isnan(X).any(0)
+    if not miss.any() and not np.isnan(Xq).any():
+        return X, Xq
+    med = np.nan_to_num(np.nanmedian(X, 0))
+
+    def fill(A):
+        return np.column_stack([np.where(np.isnan(A), med, A), np.isnan(A[:, miss]).astype(float)])
+    return fill(X), fill(Xq)
+
+
+@contextlib.contextmanager
+def epoch_time_cap(seconds):
+    """pytabkit's TabM ignores time_to_fit_in_seconds: its epoch loop stops only on patience. With verbosity >= 1 the
+    loop draws each epoch's batches through tqdm.std.tqdm, so this swaps in a pass-through that yields no batches once
+    the budget is spent; the remaining epochs only re-evaluate, patience runs out and the best weights are restored."""
+    import tqdm.std as ts
+    orig, end = ts.tqdm, time.time() + seconds
+    ts.tqdm = lambda it, desc=None, **kw: it if time.time() < end else []
+    try:
+        yield
+    finally:
+        ts.tqdm = orig
 
 
 def load_oof(name):

@@ -15,11 +15,12 @@ import optuna  # noqa: E402
 import torch  # noqa: E402
 from sklearn.model_selection import train_test_split  # noqa: E402
 
-from core import FS, L, N_THREADS, SEED, done, np, save_exp, set_status, setup  # noqa: E402
+from core import FS, L, N_THREADS, SEED, done, epoch_time_cap, impute_missing, np, save_exp, set_status, setup  # noqa: E402
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 torch.set_num_threads(N_THREADS)
-DEVICE = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
+DEVICE = os.environ.get("SFR_DEVICE") or ("cuda" if torch.cuda.is_available() else   # SFR_DEVICE=cpu if MPS fails
+                                         "mps" if torch.backends.mps.is_available() else "cpu")
 FIT_SECONDS = int(os.environ.get("DEEP_FIT_SECONDS", "300"))
 N_TRIALS = int(os.environ.get("NN_TRIALS", "6"))
 
@@ -39,7 +40,7 @@ def space_realmlp(t):
 def make(fam, p, seed):
     from pytabkit import RealMLP_TD_Regressor, TabM_D_Regressor
     if fam == "tabm":
-        return TabM_D_Regressor(device=DEVICE, random_state=seed, n_threads=N_THREADS, batch_size=1024, verbosity=0, **p)
+        return TabM_D_Regressor(device=DEVICE, random_state=seed, n_threads=N_THREADS, batch_size=1024, verbosity=1, **p)
     q = dict(p)
     w, n = q.pop("hidden_sizes").split("x")
     return RealMLP_TD_Regressor(device=DEVICE, random_state=seed, n_threads=N_THREADS, verbosity=0,
@@ -47,9 +48,11 @@ def make(fam, p, seed):
 
 
 def fit_predict(fam, p, X, y, Xq, seed=SEED):
+    X, Xq = impute_missing(X, Xq)   # medians from the fitting rows only
     tr, es = L._es_split(y, seed)
     m = make(fam, p, seed)
-    m.fit(X[tr], y[tr], X_val=X[es], y_val=y[es], time_to_fit_in_seconds=FIT_SECONDS)
+    with epoch_time_cap(FIT_SECONDS):   # TabM ignores time_to_fit_in_seconds (verbosity=1 routes it through the cap)
+        m.fit(X[tr], y[tr], X_val=X[es], y_val=y[es], time_to_fit_in_seconds=FIT_SECONDS)
     return np.clip(m.predict(Xq), 0, None)
 
 

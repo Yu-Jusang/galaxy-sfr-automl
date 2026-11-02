@@ -13,17 +13,18 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from core import FS, L, N_THREADS, SEED, done, np, save_exp, set_status, setup  # noqa: E402
+from core import FS, L, N_THREADS, SEED, done, epoch_time_cap, impute_missing, np, save_exp, set_status, setup  # noqa: E402
 
 import os  # noqa: E402
 import torch  # noqa: E402
 
 os.environ.setdefault("TABPFN_ALLOW_CPU_LARGE_DATASET", "1")
-FIT_SECONDS = int(os.environ.get("DEEP_FIT_SECONDS", "900"))  # CPU cap per fit for TabM / RealMLP
+FIT_SECONDS = int(os.environ.get("DEEP_FIT_SECONDS", "900"))  # cap per fit for TabM / RealMLP
+PFN_BATCH = 500   # TabPFN prediction batch: memory grows with batch x features (2,000 needed 34 GB on F5LS)
 
 torch.set_num_threads(N_THREADS)
-DEVICE = ("cuda" if torch.cuda.is_available() else
-          "mps" if torch.backends.mps.is_available() else "cpu")   # GPU / Apple GPU used automatically
+DEVICE = os.environ.get("SFR_DEVICE") or ("cuda" if torch.cuda.is_available() else   # SFR_DEVICE=cpu if MPS fails
+                                         "mps" if torch.backends.mps.is_available() else "cpu")
 
 
 def smear_log(fit_log):
@@ -38,9 +39,10 @@ def smear_log(fit_log):
 
 def tabm(X, y, Xq, seed):
     from pytabkit import TabM_D_Regressor
-    m = TabM_D_Regressor(device=DEVICE, random_state=seed, n_threads=N_THREADS, batch_size=1024, verbosity=0)
+    m = TabM_D_Regressor(device=DEVICE, random_state=seed, n_threads=N_THREADS, batch_size=1024, verbosity=1)
     tr, es = L._es_split(y, seed)
-    m.fit(X[tr], y[tr], X_val=X[es], y_val=y[es], time_to_fit_in_seconds=FIT_SECONDS)
+    with epoch_time_cap(FIT_SECONDS):   # verbosity=1 routes the epoch loop through the capped tqdm
+        m.fit(X[tr], y[tr], X_val=X[es], y_val=y[es])
     return np.clip(m.predict(Xq), 0, None)
 
 
@@ -75,7 +77,7 @@ def xrfm_log(X, z, Xq, seed):
     return np.asarray(m.predict(Zq), float).ravel()
 
 
-def tabpfn(X, y, Xq, seed, n_ctx=10_000, batch=2_000):
+def tabpfn(X, y, Xq, seed, n_ctx=10_000, batch=PFN_BATCH):
     from sklearn.model_selection import train_test_split
     from tabpfn import TabPFNRegressor
     idx, _ = train_test_split(np.arange(len(y)), train_size=n_ctx, random_state=seed, stratify=L.strata_labels(y))
@@ -155,9 +157,11 @@ def run(name):
     for k in range(5):
         set_status("models", f"{name}: fold {k + 1}/5")
         te = folds == k
-        oof[te] = fit(X[~te], y[~te], X[te], SEED)
+        Xa, Xb = impute_missing(X[~te], X[te])   # medians from the training folds only
+        oof[te] = fit(Xa, y[~te], Xb, SEED)
     set_status("models", f"{name}: refit for validation")
-    vp = fit(X, y, Xv, SEED)
+    Xf, Xvf = impute_missing(X, Xv)
+    vp = fit(Xf, y, Xvf, SEED)
     meta = save_exp(name, oof, vp, {"stage": "single", "family": "neural/kernel/foundation", "features": fs,
                                     "n_features": len(cols), "desc": desc, "seconds": time.time() - t0})
     set_status("models", f"{name}: CV {meta['cv_rmse_mean']:.3f} ({(time.time() - t0) / 60:.0f} min)")
