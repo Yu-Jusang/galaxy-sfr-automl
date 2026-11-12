@@ -29,11 +29,13 @@ def load(path):
 
 A = {p.stem: load(p) for p in sorted((ROOT / "results" / "oof").glob("*.parquet"))}
 B = {p.stem: load(p) for p in sorted((OUT / "oof_B").glob("*.parquet"))}
+C = {p.stem: load(p) for p in sorted((OUT / "oof_C").glob("*.parquet"))} if (OUT / "oof_C").exists() else {}
 stage = {n: json.loads((ROOT / "results" / "meta" / f"{n}.json").read_text(encoding="utf-8"))["stage"] for n in A}
 assert set(A) == set(stage), set(A) ^ set(stage)
 TIER_A = {"single": 1, "tuned": 1, "selected": 1, "autogluon": 4, "ensemble": 5}
 tier = {n: TIER_A[stage[n]] for n in A}
 tier.update({n: (1 if n.startswith("B1") else 2) for n in B})
+tier.update({n: 4 for n in C})          # AutoGluon tier
 
 G = {"D1": (lambda v: np.log10(np.clip(v, EPS, None)), lambda z: 10.0 ** z, lambda v: v > 0),
      "D2": (lambda v: np.log10(v + EPS), lambda z: np.maximum(10.0 ** z - EPS, 0.0), lambda v: np.ones(len(v), bool)),
@@ -87,7 +89,7 @@ def choose(scores, folds_used):
 
 summary = {}
 for dn in G:
-    pool = {**A, **B}
+    pool = {**A, **B, **C}
     for n in A:
         pool[f"B3_{n}_{dn}"] = recalibrate(A[n], dn); tier[f"B3_{n}_{dn}"] = 3
     scores = {n: fold_scores(p, dn) for n, p in pool.items()}
