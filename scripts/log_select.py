@@ -37,7 +37,9 @@ tier.update({n: (1 if n.startswith("B1") else 2) for n in B})
 
 G = {"D1": (lambda v: np.log10(np.clip(v, EPS, None)), lambda z: 10.0 ** z, lambda v: v > 0),
      "D2": (lambda v: np.log10(v + EPS), lambda z: np.maximum(10.0 ** z - EPS, 0.0), lambda v: np.ones(len(v), bool)),
-     "D3": (lambda v: np.log10(1.0 + v), lambda z: np.maximum(10.0 ** z - 1.0, 0.0), lambda v: np.ones(len(v), bool))}
+     "D3": (lambda v: np.log10(1.0 + v), lambda z: np.maximum(10.0 ** z - 1.0, 0.0), lambda v: np.ones(len(v), bool)),
+     "DS": (lambda v: np.log10(np.maximum(np.clip(v, 0, None), 1e-13)), lambda z: 10.0 ** z,
+            lambda v: np.ones(len(v), bool))}   # organisers' metric (primary)
 
 
 def fold_scores(pred, dn):

@@ -48,7 +48,8 @@ log("features built", FEAT.shape)
 
 G = {"D1": (np.log10, lambda z: 10.0 ** z),
      "D2": (lambda v: np.log10(v + EPS), lambda z: np.maximum(10.0 ** z - EPS, 0.0)),
-     "D3": (lambda v: np.log10(1.0 + v), lambda z: np.maximum(10.0 ** z - 1.0, 0.0))}
+     "D3": (lambda v: np.log10(1.0 + v), lambda z: np.maximum(10.0 ** z - 1.0, 0.0)),
+     "DS": (lambda v: np.log10(np.maximum(v, 1e-13)), lambda z: 10.0 ** z)}   # organisers' metric
 PARAMS = dict(learning_rate=0.05, n_estimators=1000, num_leaves=31, min_child_samples=20, random_state=42,
               n_jobs=12, verbose=-1)
 
@@ -67,7 +68,7 @@ def save(name, pred):
 
 for fs, cols in SETS.items():
     Xall = FEAT.loc[X_tr.index, cols].to_numpy(float)
-    oof = {key: np.zeros(len(y)) for key in ["B1_D1", "B1_D2", "B1_D3", "B2_D2", "B2_D3"]}
+    oof = {key: np.zeros(len(y)) for key in ["B1_D1", "B1_D2", "B1_D3", "B2_D2", "B2_D3", "B1_DS", "B2_DS"]}
     for k in range(5):
         trn, te = FOLDS != k, FOLDS == k
         Xk, yk = Xall[trn], y[trn]; labk = strata(yk); pos = yk > 0
