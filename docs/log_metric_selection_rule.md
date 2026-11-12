@@ -54,4 +54,8 @@ No hyperparameter is tuned beyond the settings listed here.
 
 ## Change log
 
-(none)
+- **2026-11-12, after the re-rank of the 139 stored candidates (commit cd5e34c) and before any B candidate was computed. Clarifications, no change of substance.**
+  1. *Complexity tier of the stored candidates.* The rule named only LightGBM for the first tier. Every stored candidate that is one fitted model (any family, including nested-tuned models and in-fold feature selection) belongs to the first tier, together with B1. Stored AutoGluon runs belong to the AutoGluon tier and stored ensembles to the ensemble tier.
+  2. *B3 is applied to every stored candidate* (the rule said "a stored candidate"). The nested estimate counts these recalibrated versions as separate candidates.
+  3. *B1 and B2 stay on F5 and F5C as written.* The re-rank showed in-fold selection from FULL (564 columns) at the top of D2, but adding FULL to B now would be a choice made after seeing results, so it is not done.
+  4. *B1 and B2 under D1* are the same model (a regression on log10 SFR of the galaxies with SFR > 0, applied to all galaxies), so it is counted once.
